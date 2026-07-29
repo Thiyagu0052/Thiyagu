@@ -5,7 +5,6 @@ import com.example.data.local.ShopDao
 import com.example.data.local.TransactionDao
 import com.example.data.model.HoldSummary
 import com.example.data.model.Product
-import com.example.data.model.PureWeightCalculator
 import com.example.data.model.Shop
 import com.example.data.model.Transaction
 import com.example.data.model.TransactionType
@@ -217,71 +216,5 @@ class SilverRepository(
                 }
             }
         }
-    }
-
-    /**
-     * Resets database to contain ONLY Sri Raja Jewellers and the specified 3 ledger entries.
-     */
-    suspend fun resetToUserLedger() {
-        clearAllData()
-
-        val shop1Id = shopDao.insertShop(
-            Shop(
-                shopName = "Sri Raja Jewellers",
-                ownerName = "Subba Rao",
-                phone = "+91 98480 22338",
-                address = "Vijayawada",
-                gstNumber = "37AAAAA0000A1Z5",
-                notes = "Wholesale partner"
-            )
-        )
-
-        // Row 1: 23-07-2026 | Sri Raja Jewellers | Delivery | 6369g | Touch 65 | Touch+11 (11.0) -> Pure 4840.4g
-        val p1 = PureWeightCalculator.calculate(6369.0, 65.0, 11.0)
-        transactionDao.insertTransaction(
-            Transaction(
-                date = "2026-07-23",
-                shopId = shop1Id,
-                shopName = "Sri Raja Jewellers",
-                type = TransactionType.DELIVERY.label,
-                weight = 6369.0,
-                touch = 65.0,
-                touchAdjustment = 11.0,
-                pureWeight = p1,
-                remarks = "Silver Delivery"
-            )
-        )
-
-        // Row 2: 23-07-2026 | Sri Raja Jewellers | Return kacha | 3616g | Touch 67.02 -> Pure 2423.4g
-        val p2 = PureWeightCalculator.calculate(3616.0, 67.02, 0.0)
-        transactionDao.insertTransaction(
-            Transaction(
-                date = "2026-07-23",
-                shopId = shop1Id,
-                shopName = "Sri Raja Jewellers",
-                type = TransactionType.RETURN_KACHA.label,
-                weight = 3616.0,
-                touch = 67.02,
-                touchAdjustment = 0.0,
-                pureWeight = p2,
-                remarks = "Return kacha"
-            )
-        )
-
-        // Row 3: 25-07-2026 | Sri Raja Jewellers | Return kacha | 1415g | Touch 65.59 -> Pure 928.1g
-        val p3 = PureWeightCalculator.calculate(1415.0, 65.59, 0.0)
-        transactionDao.insertTransaction(
-            Transaction(
-                date = "2026-07-25",
-                shopId = shop1Id,
-                shopName = "Sri Raja Jewellers",
-                type = TransactionType.RETURN_KACHA.label,
-                weight = 1415.0,
-                touch = 65.59,
-                touchAdjustment = 0.0,
-                pureWeight = p3,
-                remarks = "Return kacha"
-            )
-        )
     }
 }

@@ -3,7 +3,6 @@ package com.example.ui.components
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -63,14 +62,14 @@ fun TransactionDialog(
         touch: Double,
         touchAdjustment: Double,
         remarks: String,
-        imageUri: String
+        imageUri: String,
     ) -> Unit
 ) {
     val todayDate = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date()) }
 
     var dateText by remember { mutableStateOf(existingTransaction?.date ?: todayDate) }
     var selectedShop by remember {
-        mutableStateOf<Shop?>(
+        mutableStateOf(
             if (existingTransaction != null) {
                 shops.find { it.id == existingTransaction.shopId } ?: shops.firstOrNull()
             } else shops.firstOrNull()
@@ -333,7 +332,7 @@ fun TransactionDialog(
 
                 // Product Mapping Selection (Multiple)
                 val availableProductNames = remember(products) {
-                    val dbNames = products.map { it.productName.trim() }.filter { it.isNotEmpty() }
+                    val dbNames = products.asSequence().map { it.productName.trim() }.filter { it.isNotEmpty() }.toList()
                     if (dbNames.isNotEmpty()) dbNames.distinct()
                     else listOf("Payal", "Anklets", "Leg Chain", "Chains", "Rings", "Utensils", "Coins", "Bars", "Kaddiyalu")
                 }

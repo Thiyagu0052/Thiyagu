@@ -24,7 +24,7 @@ data class Shop(
     val address: String,
     val gstNumber: String = "",
     val notes: String = "",
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
 )
 
 @Entity(tableName = "products")
@@ -34,7 +34,7 @@ data class Product(
     val category: String,
     val defaultWeight: Double = 0.0,
     val imageUri: String = "",
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
 )
 
 @Entity(tableName = "transactions")
@@ -50,7 +50,7 @@ data class Transaction(
     val pureWeight: Double,
     val remarks: String = "",
     val imageUri: String = "",
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
 )
 
 data class HoldSummary(
@@ -68,14 +68,14 @@ object PureWeightCalculator {
      * Pure Weight = Weight * (Touch + TouchAdjustment) / 100
      */
     fun calculate(weight: Double, touch: Double, touchAdjustment: Double = 0.0): Double {
-        if (weight <= 0.0 || touch <= 0.0) return 0.0
+        if ((weight <= 0.0) || (touch <= 0.0)) return 0.0
         val effectiveTouch = touch + touchAdjustment
         val pure = (weight * effectiveTouch) / 100.0
         // Round to 1 decimal place as per spec (e.g., 6369 * 76 / 100 = 4840.4)
         return try {
             df.format(pure).toDouble()
-        } catch (e: Exception) {
-            Math.round(pure * 10.0) / 10.0
+        } catch (_: Exception) {
+            kotlin.math.round(pure * 10.0) / 10.0
         }
     }
 

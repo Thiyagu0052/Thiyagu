@@ -54,17 +54,6 @@ class SilverViewModel(application: Application) : AndroidViewModel(application) 
                 }
             }
         )
-
-        viewModelScope.launch {
-            val existingShops = repository.allShops.first()
-            if (existingShops.isEmpty()) {
-                repository.resetToUserLedger()
-                val shopsList = repository.allShops.first()
-                val productsList = repository.allProducts.first()
-                val txsList = repository.allTransactions.first()
-                firebaseSyncManager.syncAllData(shopsList, productsList, txsList)
-            }
-        }
     }
 
     override fun onCleared() {
@@ -109,7 +98,7 @@ class SilverViewModel(application: Application) : AndroidViewModel(application) 
                     tx.shopName.contains(query, ignoreCase = true) ||
                     tx.remarks.contains(query, ignoreCase = true) ||
                     tx.type.contains(query, ignoreCase = true)
-            val matchesShop = shopId == null || tx.shopId == shopId
+            val matchesShop = (shopId == null) || (tx.shopId == shopId)
             val matchesType = type.isNullOrBlank() || tx.type.equals(type, ignoreCase = true)
             matchesQuery && matchesShop && matchesType
         }
@@ -170,7 +159,7 @@ class SilverViewModel(application: Application) : AndroidViewModel(application) 
     // Product Operations
     fun addProduct(productName: String, category: String, defaultWeight: Double, imageUri: String = "") {
         viewModelScope.launch {
-            val names = productName.split(",", "\n").map { it.trim() }.filter { it.isNotEmpty() }
+            val names = productName.split(",", "\n").asSequence().map { it.trim() }.filter { it.isNotEmpty() }.toList()
             val uploadedImageUri = uploadTransactionImages(imageUri)
             for (name in names) {
                 val product = Product(
@@ -275,7 +264,7 @@ class SilverViewModel(application: Application) : AndroidViewModel(application) 
 
     fun resetData() {
         viewModelScope.launch {
-            repository.resetToUserLedger()
+            repository.clearAllData()
             syncToFirebase()
         }
     }
