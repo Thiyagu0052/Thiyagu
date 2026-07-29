@@ -43,9 +43,9 @@ fun SummaryCardsSection(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             SummaryCard(
-                title = "Total Delivery",
+                title = "மொத்த கொடுத்தல்",
                 value = "${summary.totalDelivery} g",
-                subtitle = "Pure Silver Issued",
+                subtitle = "வெள்ளி வழங்கப்பட்டது",
                 icon = Icons.Default.CallMade,
                 containerColor = Color(0xFFEFF6FF),
                 contentColor = DeliveryBlue,
@@ -54,9 +54,9 @@ fun SummaryCardsSection(
             )
 
             SummaryCard(
-                title = "Total Return",
+                title = "மொத்த வரவு",
                 value = "${summary.totalReturn} g",
-                subtitle = "Kacha & Fine",
+                subtitle = "கச்சா & பைன்",
                 icon = Icons.Default.CallReceived,
                 containerColor = Color(0xFFECFDF5),
                 contentColor = ReturnGreen,
@@ -70,9 +70,9 @@ fun SummaryCardsSection(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             SummaryCard(
-                title = "Current Hold",
+                title = "தற்போதைய இருப்பு",
                 value = "${summary.currentHold} g",
-                subtitle = "Delivery - Return",
+                subtitle = "கொடுத்தல் - வரவு",
                 icon = Icons.Default.Lock,
                 containerColor = Color(0xFFFFFBEB),
                 contentColor = HoldAmber,
@@ -80,9 +80,9 @@ fun SummaryCardsSection(
             )
 
             SummaryCard(
-                title = "Total Shops",
+                title = "மொத்தக் கடைகள்",
                 value = "${summary.totalShops}",
-                subtitle = "Active Partners",
+                subtitle = "செயலில் உள்ள கடைகள்",
                 icon = Icons.Default.Store,
                 containerColor = Color(0xFFF3E8FF),
                 contentColor = SettlementPurple,

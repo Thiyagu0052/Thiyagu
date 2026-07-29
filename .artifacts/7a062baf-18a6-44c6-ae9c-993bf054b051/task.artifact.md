@@ -1,0 +1,13 @@
+- [x] Update Data Models and ViewModel
+    - [x] Define `BackupData` model
+    - [x] Implement export/import logic in `SilverViewModel`
+- [x] Update UI Components
+    - [x] Modify `SettingsScreen` to remove sample cards and pure weight formula
+    - [x] Add Backup & Restore section to `SettingsScreen`
+- [x] Implement File Handlers in Navigation/Activity
+    - [x] Setup `ActivityResultLauncher` for Export/Import
+    - [x] Connect UI events to ViewModel logic
+- [x] Verification
+    - [x] Verify export functionality
+    - [x] Verify import functionality
+    - [x] Verify UI cleanup

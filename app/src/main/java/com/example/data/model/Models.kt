@@ -2,11 +2,12 @@ package com.example.data.model
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.squareup.moshi.JsonClass
 import java.text.DecimalFormat
 
-enum class TransactionType(val label: String, val isDeliveryType: Boolean, val isReturnType: Boolean) {
-    DELIVERY("Delivery", true, false),
-    RETURN_KACHA("Return Kacha", false, true);
+enum class TransactionType(val label: String, val displayLabel: String, val isDeliveryType: Boolean, val isReturnType: Boolean) {
+    DELIVERY("Delivery", "கொடுத்தல்", true, false),
+    RETURN_KACHA("Return Kacha", "வரவு", false, true);
 
     companion object {
         fun fromLabel(label: String): TransactionType {
@@ -16,6 +17,7 @@ enum class TransactionType(val label: String, val isDeliveryType: Boolean, val i
 }
 
 @Entity(tableName = "shops")
+@JsonClass(generateAdapter = true)
 data class Shop(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val shopName: String,
@@ -28,6 +30,7 @@ data class Shop(
 )
 
 @Entity(tableName = "products")
+@JsonClass(generateAdapter = true)
 data class Product(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val productName: String,
@@ -38,9 +41,11 @@ data class Product(
 )
 
 @Entity(tableName = "transactions")
+@JsonClass(generateAdapter = true)
 data class Transaction(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val date: String, // YYYY-MM-DD or DD-MM-YYYY format
+    val date: String, // YYYY-MM-DD format
+    val time: String = "", // HH:mm format
     val shopId: Long,
     val shopName: String,
     val type: String, // Delivery, Return Kacha, Return Fine, Settlement
@@ -51,6 +56,15 @@ data class Transaction(
     val remarks: String = "",
     val imageUri: String = "",
     val createdAt: Long = System.currentTimeMillis(),
+)
+
+@JsonClass(generateAdapter = true)
+data class BackupData(
+    val shops: List<Shop>,
+    val products: List<Product>,
+    val transactions: List<Transaction>,
+    val backupDate: Long = System.currentTimeMillis(),
+    val appVersion: String = "1.0.0"
 )
 
 data class HoldSummary(

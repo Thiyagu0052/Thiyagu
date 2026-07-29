@@ -1,5 +1,7 @@
 package com.example.data.repository
 
+import androidx.room.withTransaction
+import com.example.data.local.AppDatabase
 import com.example.data.local.ProductDao
 import com.example.data.local.ShopDao
 import com.example.data.local.TransactionDao
@@ -11,12 +13,18 @@ import com.example.data.model.TransactionType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 class SilverRepository(
-    private val shopDao: ShopDao,
-    private val productDao: ProductDao,
-    private val transactionDao: TransactionDao
+    private val database: AppDatabase
 ) {
+    private val shopDao = database.shopDao()
+    private val productDao = database.productDao()
+    private val transactionDao = database.transactionDao()
+
+    private val syncMutex = Mutex()
+
     val allShops: Flow<List<Shop>> = shopDao.getAllShops()
     val allProducts: Flow<List<Product>> = productDao.getAllProducts()
     val allTransactions: Flow<List<Transaction>> = transactionDao.getAllTransactions()
@@ -73,85 +81,91 @@ class SilverRepository(
         productDao.deleteAllProducts()
     }
 
-    suspend fun saveShopsFromRemote(shops: List<Shop>) {
-        val existingShops = shopDao.getAllShops().first()
-        shops.forEach { remote ->
-            val match = existingShops.find { it.id == remote.id || it.shopName.equals(remote.shopName, ignoreCase = true) }
-            if (match != null) {
-                shopDao.updateShop(remote.copy(id = match.id))
-            } else {
-                shopDao.insertShop(remote)
-            }
-        }
-        // Remove duplicate shops with identical names
-        val allCurrent = shopDao.getAllShops().first()
-        val seenNames = mutableSetOf<String>()
-        allCurrent.forEach { shop ->
-            val key = shop.shopName.trim().lowercase()
-            if (seenNames.contains(key)) {
-                shopDao.deleteShop(shop)
-            } else {
-                seenNames.add(key)
-            }
-        }
-    }
-
-    suspend fun saveProductsFromRemote(products: List<Product>) {
-        val existingProducts = productDao.getAllProducts().first()
-        products.forEach { remote ->
-            val match = existingProducts.find { it.id == remote.id || it.productName.equals(remote.productName, ignoreCase = true) }
-            if (match != null) {
-                productDao.updateProduct(remote.copy(id = match.id))
-            } else {
-                productDao.insertProduct(remote)
-            }
-        }
-        val allCurrent = productDao.getAllProducts().first()
-        val seenNames = mutableSetOf<String>()
-        allCurrent.forEach { prod ->
-            val key = prod.productName.trim().lowercase()
-            if (seenNames.contains(key)) {
-                productDao.deleteProduct(prod)
-            } else {
-                seenNames.add(key)
-            }
-        }
-    }
-
-    suspend fun saveTransactionsFromRemote(transactions: List<Transaction>) {
-        val existingTxs = transactionDao.getAllTransactions().first()
-        transactions.forEach { remote ->
-            val match = existingTxs.find { local ->
-                local.id == remote.id || (
-                    local.date == remote.date &&
-                    local.shopName.equals(remote.shopName, ignoreCase = true) &&
-                    local.type == remote.type &&
-                    local.weight == remote.weight &&
-                    local.pureWeight == remote.pureWeight
-                )
-            }
-            if (match != null) {
-                val mergedImage = if (remote.imageUri.isNotBlank()) remote.imageUri else match.imageUri
-                transactionDao.updateTransaction(remote.copy(id = match.id, imageUri = mergedImage))
-            } else {
-                transactionDao.insertTransaction(remote)
-            }
-        }
-        // Remove exact duplicate transactions locally
-        val allCurrent = transactionDao.getAllTransactions().first()
-        val seenMap = mutableMapOf<String, Transaction>()
-        allCurrent.forEach { tx ->
-            val key = "${tx.date}_${tx.shopName.trim().lowercase()}_${tx.type.lowercase()}_${tx.weight}_${tx.pureWeight}"
-            val existing = seenMap[key]
-            if (existing != null) {
-                if (tx.imageUri.isNotBlank() && existing.imageUri.isBlank()) {
-                    val updated = existing.copy(imageUri = tx.imageUri)
-                    transactionDao.updateTransaction(updated)
-                    seenMap[key] = updated
+    suspend fun saveShopsFromRemote(shops: List<Shop>) = syncMutex.withLock {
+        database.withTransaction {
+            val existingShops = shopDao.getAllShops().first()
+            shops.forEach { remote ->
+                val match = existingShops.find { it.id == remote.id || it.shopName.trim().equals(remote.shopName.trim(), ignoreCase = true) }
+                if (match != null) {
+                    shopDao.updateShop(remote.copy(id = match.id))
+                } else {
+                    shopDao.insertShop(remote)
                 }
-                transactionDao.deleteTransaction(tx)
-            } else {
-                seenMap[key] = tx
+            }
+            // Remove duplicate shops with identical names
+            val allCurrent = shopDao.getAllShops().first()
+            val seenNames = mutableSetOf<String>()
+            allCurrent.forEach { shop ->
+                val key = shop.shopName.trim().lowercase()
+                if (seenNames.contains(key)) {
+                    shopDao.deleteShop(shop)
+                } else {
+                    seenNames.add(key)
+                }
+            }
+        }
+    }
+
+    suspend fun saveProductsFromRemote(products: List<Product>) = syncMutex.withLock {
+        database.withTransaction {
+            val existingProducts = productDao.getAllProducts().first()
+            products.forEach { remote ->
+                val match = existingProducts.find { it.id == remote.id || it.productName.trim().equals(remote.productName.trim(), ignoreCase = true) }
+                if (match != null) {
+                    productDao.updateProduct(remote.copy(id = match.id))
+                } else {
+                    productDao.insertProduct(remote)
+                }
+            }
+            val allCurrent = productDao.getAllProducts().first()
+            val seenNames = mutableSetOf<String>()
+            allCurrent.forEach { prod ->
+                val key = prod.productName.trim().lowercase()
+                if (seenNames.contains(key)) {
+                    productDao.deleteProduct(prod)
+                } else {
+                    seenNames.add(key)
+                }
+            }
+        }
+    }
+
+    suspend fun saveTransactionsFromRemote(transactions: List<Transaction>) = syncMutex.withLock {
+        database.withTransaction {
+            val existingTxs = transactionDao.getAllTransactions().first()
+            transactions.forEach { remote ->
+                val match = existingTxs.find { local ->
+                    local.id == remote.id || (
+                        local.date == remote.date &&
+                        local.shopName.trim().equals(remote.shopName.trim(), ignoreCase = true) &&
+                        local.type == remote.type &&
+                        local.weight == remote.weight &&
+                        local.pureWeight == remote.pureWeight
+                    )
+                }
+                if (match != null) {
+                    val mergedImage = if (remote.imageUri.isNotBlank()) remote.imageUri else match.imageUri
+                    transactionDao.updateTransaction(remote.copy(id = match.id, imageUri = mergedImage))
+                } else {
+                    transactionDao.insertTransaction(remote)
+                }
+            }
+            // Remove exact duplicate transactions locally
+            val allCurrent = transactionDao.getAllTransactions().first()
+            val seenMap = mutableMapOf<String, Transaction>()
+            allCurrent.forEach { tx ->
+                val key = "${tx.date}_${tx.shopName.trim().lowercase()}_${tx.type.lowercase()}_${tx.weight}_${tx.pureWeight}"
+                val existing = seenMap[key]
+                if (existing != null) {
+                    if (tx.imageUri.isNotBlank() && existing.imageUri.isBlank()) {
+                        val updated = existing.copy(imageUri = tx.imageUri)
+                        transactionDao.updateTransaction(updated)
+                        seenMap[key] = updated
+                    }
+                    transactionDao.deleteTransaction(tx)
+                } else {
+                    seenMap[key] = tx
+                }
             }
         }
     }

@@ -5,13 +5,17 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.CloudDone
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -31,12 +35,11 @@ fun SettingsScreen(
     currentUser: User?,
     syncStatus: SyncStatus,
     onSyncToSupabase: () -> Unit,
-    onResetSampleData: () -> Unit,
+    onExportData: () -> Unit,
+    onImportData: () -> Unit,
     onLogout: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
-    var showResetSnackbar by remember { mutableStateOf(false) }
-
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -178,13 +181,12 @@ fun SettingsScreen(
             }
         }
 
-        // Pure Weight Formula Reference Card
+        // Backup & Restore Card
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
-            )
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
             Column(
                 modifier = Modifier
@@ -193,39 +195,52 @@ fun SettingsScreen(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        imageVector = Icons.Default.Calculate,
+                        imageVector = Icons.Default.Storage,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Pure Weight Business Math Logic",
-                        style = MaterialTheme.typography.titleSmall,
+                        text = "காப்புப்பிரதி மற்றும் மீட்டமைப்பு (Backup)",
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                Surface(
-                    color = MaterialTheme.colorScheme.surface,
-                    shape = RoundedCornerShape(10.dp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text(
-                        text = "Pure Weight = Weight × (Touch + Touch Adjustment) / 100",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(12.dp)
-                    )
+                    Button(
+                        onClick = onExportData,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    ) {
+                        Icon(imageVector = Icons.Default.FileDownload, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("ஏற்றுமதி")
+                    }
+
+                    Button(
+                        onClick = onImportData,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                    ) {
+                        Icon(imageVector = Icons.Default.FileUpload, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("இறக்குமதி")
+                    }
                 }
-
+                
                 Spacer(modifier = Modifier.height(8.dp))
-
                 Text(
-                    text = "Current Hold = Total Delivery - Total Return (Kacha + Fine)",
+                    text = "உள்ளூர் தரவை JSON கோப்பாகச் சேமிக்கவும் அல்லது மீட்டெடுக்கவும்.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.DarkGray
+                    color = Color.Gray
                 )
             }
         }
@@ -239,31 +254,8 @@ fun SettingsScreen(
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 ListItem(
-                    headlineContent = { Text("Seed Sample Business Data") },
-                    supportingContent = { Text("Pre-populates sample shops and transaction ledgers") },
-                    leadingContent = {
-                        Icon(imageVector = Icons.Default.Refresh, contentDescription = null)
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Button(
-                    onClick = {
-                        onResetSampleData()
-                        showResetSnackbar = true
-                    },
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .fillMaxWidth(),
-                    shape = RoundedCornerShape(10.dp)
-                ) {
-                    Text("Load Sample Wholesale Ledger")
-                }
-
-                HorizontalDivider()
-
-                ListItem(
-                    headlineContent = { Text("System Version") },
-                    supportingContent = { Text("Silver ERP v1.0.0 (Kotlin + Room + Compose)") },
+                    headlineContent = { Text("கணினி பதிப்பு") },
+                    supportingContent = { Text("KKY Silvers v1.1.0") },
                     leadingContent = {
                         Icon(imageVector = Icons.Default.Info, contentDescription = null)
                     }
@@ -272,10 +264,10 @@ fun SettingsScreen(
                 HorizontalDivider()
 
                 ListItem(
-                    headlineContent = { Text("Sign Out", color = MaterialTheme.colorScheme.error) },
+                    headlineContent = { Text("வெளியேறு", color = MaterialTheme.colorScheme.error) },
                     leadingContent = {
                         Icon(
-                            imageVector = Icons.Default.Logout,
+                            imageVector = Icons.AutoMirrored.Filled.Logout,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.error
                         )
@@ -290,21 +282,8 @@ fun SettingsScreen(
                         .fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp)
                 ) {
-                    Text("Logout User Session")
+                    Text("அமர்விலிருந்து வெளியேறு")
                 }
-            }
-        }
-
-        if (showResetSnackbar) {
-            Snackbar(
-                action = {
-                    TextButton(onClick = { showResetSnackbar = false }) {
-                        Text("OK")
-                    }
-                },
-                modifier = Modifier.padding(8.dp)
-            ) {
-                Text("Sample wholesale ledger re-populated successfully!")
             }
         }
     }

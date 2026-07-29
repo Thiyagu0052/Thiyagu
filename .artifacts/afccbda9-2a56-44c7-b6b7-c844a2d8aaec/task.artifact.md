@@ -1,0 +1,9 @@
+- [x] Update `Transaction` model with `time` field in `Models.kt`
+- [x] Increment `AppDatabase` version in `AppDatabase.kt`
+- [x] Update `SilverViewModel` to handle the `time` field
+- [x] Add time selection to `TransactionDialog.kt`
+- [x] Display date and time in `TransactionCardItem.kt`
+- [x] Implement date range selection in `ReportsScreen.kt`
+- [x] Update `ReportsScreen.kt` filtering and chronological sorting
+- [x] Update `ReportSharingUtils.kt` to include time and date range headers
+- [x] Verify changes manually

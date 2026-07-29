@@ -251,6 +251,7 @@ class FirebaseSyncManager {
             val map = hashMapOf<String, Any>(
                 "id" to transaction.id,
                 "date" to transaction.date,
+                "time" to transaction.time,
                 "shopId" to transaction.shopId,
                 "shopName" to transaction.shopName,
                 "type" to transaction.type,

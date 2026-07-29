@@ -1,0 +1,9 @@
+- [x] Update `Models.kt` with Tamil `displayLabel` for `TransactionType`
+- [x] Update `SummaryCards.kt` with Tamil labels
+- [x] Update `DashboardScreen.kt`: Rebranding, Tamil labels, and list numbering
+- [x] Update `ShopsScreen.kt`: Tamil labels and list numbering
+- [x] Update `TransactionDialog.kt`: Tamil labels for form fields and actions
+- [x] Update `ReportsScreen.kt`: Tamil labels and report sharing content
+- [x] Update `TransactionCardItem.kt`: Tamil labels for transaction details
+- [x] Update `SettingsScreen.kt`: Tamil labels for formula references
+- [/] Verify changes on the device

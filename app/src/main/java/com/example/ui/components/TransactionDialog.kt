@@ -55,6 +55,7 @@ fun TransactionDialog(
     onDismiss: () -> Unit,
     onSave: (
         date: String,
+        time: String,
         shopId: Long,
         shopName: String,
         type: String,
@@ -66,8 +67,10 @@ fun TransactionDialog(
     ) -> Unit
 ) {
     val todayDate = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date()) }
+    val currentTime = remember { SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date()) }
 
     var dateText by remember { mutableStateOf(existingTransaction?.date ?: todayDate) }
+    var timeText by remember { mutableStateOf(existingTransaction?.time ?: currentTime) }
     var selectedShop by remember {
         mutableStateOf(
             if (existingTransaction != null) {
@@ -145,7 +148,7 @@ fun TransactionDialog(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = if (existingTransaction == null) "New Transaction" else "Edit Transaction",
+                            text = if (existingTransaction == null) "புதிய பரிவர்த்தனை" else "பரிவர்த்தனையைத் திருத்து",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold
                         )
@@ -165,15 +168,29 @@ fun TransactionDialog(
                         .verticalScroll(rememberScrollState())
                 ) {
 
-                // Date Field
-                OutlinedTextField(
-                    value = dateText,
-                    onValueChange = { dateText = it },
-                    label = { Text("Transaction Date (YYYY-MM-DD)") },
+                // Date & Time Fields
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp)
-                )
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    OutlinedTextField(
+                        value = dateText,
+                        onValueChange = { dateText = it },
+                        label = { Text("தேதி (YYYY-MM-DD)") },
+                        modifier = Modifier.weight(1.2f),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    OutlinedTextField(
+                        value = timeText,
+                        onValueChange = { timeText = it },
+                        label = { Text("நேரம் (HH:mm)") },
+                        modifier = Modifier.weight(0.8f),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -183,10 +200,10 @@ fun TransactionDialog(
                     onExpandedChange = { expandedShopDropdown = !expandedShopDropdown }
                 ) {
                     OutlinedTextField(
-                        value = selectedShop?.shopName ?: "Select Shop",
+                        value = selectedShop?.shopName ?: "கடையைத் தேர்ந்தெடுக்கவும்",
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Select Shop") },
+                        label = { Text("கடையைத் தேர்ந்தெடுக்கவும்") },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedShopDropdown) },
                         modifier = Modifier
                             .menuAnchor(MenuAnchorType.PrimaryNotEditable)
@@ -222,10 +239,10 @@ fun TransactionDialog(
                     onExpandedChange = { expandedTypeDropdown = !expandedTypeDropdown }
                 ) {
                     OutlinedTextField(
-                        value = selectedType.label,
+                        value = selectedType.displayLabel,
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Transaction Type") },
+                        label = { Text("பரிவர்த்தனை வகை") },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedTypeDropdown) },
                         modifier = Modifier
                             .menuAnchor(MenuAnchorType.PrimaryNotEditable)
@@ -238,7 +255,7 @@ fun TransactionDialog(
                     ) {
                         TransactionType.entries.forEach { type ->
                             DropdownMenuItem(
-                                text = { Text(type.label, fontWeight = FontWeight.Medium) },
+                                text = { Text(type.displayLabel, fontWeight = FontWeight.Medium) },
                                 onClick = {
                                     selectedType = type
                                     expandedTypeDropdown = false
@@ -258,8 +275,8 @@ fun TransactionDialog(
                     OutlinedTextField(
                         value = weightText,
                         onValueChange = { weightText = it },
-                        label = { Text("Weight (g)") },
-                        placeholder = { Text("e.g. 6369") },
+                        label = { Text("எடை (கி)") },
+                        placeholder = { Text("எ.கா. 6369") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.weight(1f),
                         singleLine = true,
@@ -269,8 +286,8 @@ fun TransactionDialog(
                     OutlinedTextField(
                         value = touchText,
                         onValueChange = { touchText = it },
-                        label = { Text("Touch (%)") },
-                        placeholder = { Text("e.g. 76") },
+                        label = { Text("டச் (%)") },
+                        placeholder = { Text("எ.கா. 76") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.weight(1f),
                         singleLine = true,
@@ -283,8 +300,8 @@ fun TransactionDialog(
                 OutlinedTextField(
                     value = touchAdjText,
                     onValueChange = { touchAdjText = it },
-                    label = { Text("Touch Adjustment (%)") },
-                    placeholder = { Text("e.g. 0 or 11") },
+                    label = { Text("டச் சரிசெய்தல் (%)") },
+                    placeholder = { Text("எ.கா. 0 அல்லது 11") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
@@ -308,7 +325,7 @@ fun TransactionDialog(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "CALCULATED PURE WEIGHT",
+                            text = "கணக்கிடப்பட்ட நிகர எடை",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
                             fontWeight = FontWeight.Bold
@@ -321,7 +338,7 @@ fun TransactionDialog(
                             color = MaterialTheme.colorScheme.primary
                         )
                         Text(
-                            text = "Formula: Pure = Weight × (Touch + Adj) / 100",
+                            text = "சூத்திரம்: நிகர = எடை × (டச் + சரிசெய்தல்) / 100",
                             style = MaterialTheme.typography.labelSmall,
                             color = Color.Gray
                         )
@@ -338,7 +355,7 @@ fun TransactionDialog(
                 }
 
                 Text(
-                    text = "Map Product Name(s):",
+                    text = "தயாரிப்பு பெயர்(கள்):",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold
@@ -374,8 +391,8 @@ fun TransactionDialog(
                 OutlinedTextField(
                     value = remarksText,
                     onValueChange = { remarksText = it },
-                    label = { Text("Remarks / Product Notes") },
-                    placeholder = { Text("Selected products & remarks appear here") },
+                    label = { Text("குறிப்புகள் / தயாரிப்பு விவரங்கள்") },
+                    placeholder = { Text("தேர்ந்தெடுக்கப்பட்ட தயாரிப்புகள் இங்கே தோன்றும்") },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     maxLines = 3
@@ -396,7 +413,7 @@ fun TransactionDialog(
                         ) {
                             Icon(imageVector = Icons.Default.AddPhotoAlternate, contentDescription = null)
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text(if (imageUris.isEmpty()) "Attach Bills / Photos" else "Add More Photos")
+                            Text(if (imageUris.isEmpty()) "பில்கள் / புகைப்படங்களை இணைக்கவும்" else "கூடுதல் புகைப்படங்களைச் சேர்க்கவும்")
                         }
 
                         if (imageUris.isNotEmpty()) {
@@ -472,7 +489,7 @@ fun TransactionDialog(
                         onClick = onDismiss,
                         modifier = Modifier.padding(end = 8.dp)
                     ) {
-                        Text("Cancel")
+                        Text("ரத்து செய்")
                     }
 
                     Button(
@@ -481,6 +498,7 @@ fun TransactionDialog(
                             if (shop != null && weightVal > 0 && touchVal > 0) {
                                 onSave(
                                     dateText,
+                                    timeText,
                                     shop.id,
                                     shop.shopName,
                                     selectedType.label,
@@ -498,7 +516,7 @@ fun TransactionDialog(
                     ) {
                         Icon(imageVector = Icons.Default.Check, contentDescription = null)
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text(if (existingTransaction == null) "Save Transaction" else "Update Transaction")
+                        Text(if (existingTransaction == null) "சேமி" else "புதுப்பி")
                     }
                 }
             }

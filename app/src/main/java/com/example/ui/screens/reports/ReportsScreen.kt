@@ -3,18 +3,25 @@ package com.example.ui.screens.reports
 import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Assessment
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -25,6 +32,10 @@ import com.example.ui.components.TransactionCardItem
 import com.example.ui.theme.DeliveryBlue
 import com.example.ui.theme.HoldAmber
 import com.example.ui.theme.ReturnGreen
+import com.example.util.ReportSharingUtils
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,12 +46,48 @@ fun ReportsScreen(
 ) {
     val context = LocalContext.current
     var selectedShopId by remember { mutableStateOf<Long?>(null) }
-    var selectedShopName by remember { mutableStateOf("All Shops") }
+    var selectedShopName by remember { mutableStateOf("அனைத்து கடைகள்") }
     var expandedShopDropdown by remember { mutableStateOf(false) }
+    var showShareDialog by remember { mutableStateOf(false) }
 
-    val filteredTransactions = remember(transactions, selectedShopId) {
-        if (selectedShopId == null) transactions
-        else transactions.filter { it.shopId == selectedShopId }
+    // Date Range State
+    var showDateRangePicker by remember { mutableStateOf(false) }
+    val datePickerState = rememberDateRangePickerState()
+    
+    val sdf = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
+    val displayDateSdf = remember { SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()) }
+
+    val filteredTransactions = remember(transactions, selectedShopId, datePickerState.selectedStartDateMillis, datePickerState.selectedEndDateMillis) {
+        transactions.filter { tx ->
+            val matchesShop = selectedShopId == null || tx.shopId == selectedShopId
+            
+            val txTime = try { sdf.parse(tx.date)?.time ?: 0L } catch (e: Exception) { 0L }
+            val start = datePickerState.selectedStartDateMillis
+            val end = datePickerState.selectedEndDateMillis
+            
+            val matchesDate = if (start != null && end != null) {
+                // Buffer to end of day for endDate
+                txTime in start..end
+            } else if (start != null) {
+                txTime >= start
+            } else if (end != null) {
+                txTime <= end
+            } else true
+            
+            matchesShop && matchesDate
+        }.sortedWith(compareBy({ it.date }, { it.time }))
+    }
+
+    val formattedDateRange = remember(datePickerState.selectedStartDateMillis, datePickerState.selectedEndDateMillis) {
+        val start = datePickerState.selectedStartDateMillis
+        val end = datePickerState.selectedEndDateMillis
+        if (start != null && end != null) {
+            "${displayDateSdf.format(Date(start))} - ${displayDateSdf.format(Date(end))}"
+        } else if (start != null) {
+            "From ${displayDateSdf.format(Date(start))}"
+        } else if (end != null) {
+            "Until ${displayDateSdf.format(Date(end))}"
+        } else "முழு விவரம்"
     }
 
     // Calculations
@@ -55,25 +102,52 @@ fun ReportsScreen(
     val roundedReturn = Math.round(returnSum * 10.0) / 10.0
     val roundedHold = Math.round((deliverySum - returnSum) * 10.0) / 10.0
 
-    fun shareReport(ctx: Context) {
-        val reportBuilder = StringBuilder()
-        reportBuilder.append("--- SILVER ERP REPORT ---\n")
-        reportBuilder.append("Shop Filter: $selectedShopName\n")
-        reportBuilder.append("Total Delivery Pure Weight: $roundedDelivery g\n")
-        reportBuilder.append("Total Return Pure Weight: $roundedReturn g\n")
-        reportBuilder.append("Current Hold Balance: $roundedHold g\n\n")
-        reportBuilder.append("Transactions (${filteredTransactions.size} records):\n")
+    if (showShareDialog) {
+        ShareOptionsDialog(
+            onDismiss = { showShareDialog = false },
+            onSelect = { format ->
+                showShareDialog = false
+                when (format) {
+                    "Text" -> ReportSharingUtils.shareTextReport(
+                        context, selectedShopName, filteredTransactions,
+                        roundedDelivery, roundedReturn, roundedHold,
+                        formattedDateRange
+                    )
+                    "Image" -> ReportSharingUtils.shareImageReport(
+                        context, selectedShopName, filteredTransactions,
+                        roundedDelivery, roundedReturn, roundedHold,
+                        formattedDateRange
+                    )
+                    "PDF" -> ReportSharingUtils.sharePdfReport(
+                        context, selectedShopName, filteredTransactions,
+                        roundedDelivery, roundedReturn, roundedHold,
+                        formattedDateRange
+                    )
+                }
+            }
+        )
+    }
 
-        filteredTransactions.forEach { tx ->
-            reportBuilder.append("${tx.date} | ${tx.shopName} | ${tx.type} | Pure: ${tx.pureWeight}g (Gross: ${tx.weight}g @ ${tx.touch}%)\n")
+    if (showDateRangePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDateRangePicker = false },
+            confirmButton = {
+                TextButton(onClick = { showDateRangePicker = false }) { Text("சரி") }
+            },
+            dismissButton = {
+                TextButton(onClick = { 
+                    datePickerState.setSelection(null, null)
+                    showDateRangePicker = false 
+                }) { Text("அழி") }
+            }
+        ) {
+            DateRangePicker(
+                state = datePickerState,
+                title = { Text("தேதி வரம்பைத் தேர்ந்தெடுக்கவும்", modifier = Modifier.padding(16.dp)) },
+                showModeToggle = false,
+                modifier = Modifier.fillMaxHeight()
+            )
         }
-
-        val sendIntent = Intent().apply {
-            action = Intent.ACTION_SEND
-            putExtra(Intent.EXTRA_TEXT, reportBuilder.toString())
-            type = "text/plain"
-        }
-        ctx.startActivity(Intent.createChooser(sendIntent, "Share Silver ERP Report"))
     }
 
     Column(
@@ -95,63 +169,86 @@ fun ReportsScreen(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Reports & Analytics",
+                    text = "அறிக்கைகள்",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
             }
 
             Button(
-                onClick = { shareReport(context) },
+                onClick = { showShareDialog = true },
                 shape = RoundedCornerShape(10.dp)
             ) {
                 Icon(imageVector = Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(6.dp))
-                Text("Share Report")
+                Text("பகிரவும்")
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
         // Shop Dropdown Filter
-        ExposedDropdownMenuBox(
-            expanded = expandedShopDropdown,
-            onExpandedChange = { expandedShopDropdown = !expandedShopDropdown }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            OutlinedTextField(
-                value = selectedShopName,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("Filter by Shop") },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedShopDropdown) },
-                modifier = Modifier
-                    .menuAnchor(MenuAnchorType.PrimaryNotEditable)
-                    .fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            )
-            ExposedDropdownMenu(
+            ExposedDropdownMenuBox(
                 expanded = expandedShopDropdown,
-                onDismissRequest = { expandedShopDropdown = false }
+                onExpandedChange = { expandedShopDropdown = !expandedShopDropdown },
+                modifier = Modifier.weight(1f)
             ) {
-                DropdownMenuItem(
-                    text = { Text("All Shops", fontWeight = FontWeight.Bold) },
-                    onClick = {
-                        selectedShopId = null
-                        selectedShopName = "All Shops"
-                        expandedShopDropdown = false
-                    }
+                OutlinedTextField(
+                    value = selectedShopName,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("கடை வாரியாக") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedShopDropdown) },
+                    modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
                 )
-                shops.forEach { shop ->
+                ExposedDropdownMenu(
+                    expanded = expandedShopDropdown,
+                    onDismissRequest = { expandedShopDropdown = false }
+                ) {
                     DropdownMenuItem(
-                        text = { Text(shop.shopName) },
+                        text = { Text("அனைத்து கடைகள்", fontWeight = FontWeight.Bold) },
                         onClick = {
-                            selectedShopId = shop.id
-                            selectedShopName = shop.shopName
+                            selectedShopId = null
+                            selectedShopName = "அனைத்து கடைகள்"
                             expandedShopDropdown = false
                         }
                     )
+                    shops.forEach { shop ->
+                        DropdownMenuItem(
+                            text = { Text(shop.shopName) },
+                            onClick = {
+                                selectedShopId = shop.id
+                                selectedShopName = shop.shopName
+                                expandedShopDropdown = false
+                            }
+                        )
+                    }
                 }
             }
+
+            OutlinedTextField(
+                value = formattedDateRange,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("தேதி வரம்பு") },
+                leadingIcon = { Icon(Icons.Default.DateRange, contentDescription = null) },
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable { showDateRangePicker = true },
+                enabled = false, // To make it clickable as a whole
+                colors = OutlinedTextFieldDefaults.colors(
+                    disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                    disabledBorderColor = MaterialTheme.colorScheme.outline,
+                    disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                ),
+                shape = RoundedCornerShape(12.dp)
+            )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -164,9 +261,14 @@ fun ReportsScreen(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = "Holding Balance Summary ($selectedShopName)",
+                    text = "இருப்பு விவரம் ($selectedShopName)",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = formattedDateRange,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -176,17 +278,17 @@ fun ReportsScreen(
                     horizontalArrangement = Arrangement.SpaceAround
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Total Delivery", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+                        Text("மொத்த கொடுத்தல்", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
                         Text("$roundedDelivery g", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = DeliveryBlue)
                     }
 
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Total Return", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+                        Text("மொத்த வரவு", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
                         Text("$roundedReturn g", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = ReturnGreen)
                     }
 
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Current Hold", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+                        Text("தற்போதைய இருப்பு", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
                         Text("$roundedHold g", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold, color = HoldAmber)
                     }
                 }
@@ -196,7 +298,7 @@ fun ReportsScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Report Statement (${filteredTransactions.size} Records)",
+            text = "அறிக்கை விவரம் (${filteredTransactions.size} பதிவுகள்)",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold
         )
@@ -205,7 +307,7 @@ fun ReportsScreen(
 
         if (filteredTransactions.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No transaction data available for this report.", color = Color.Gray)
+                Text("தகவல் இல்லை.", color = Color.Gray)
             }
         } else {
             LazyColumn(
@@ -213,10 +315,51 @@ fun ReportsScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 contentPadding = PaddingValues(bottom = 20.dp)
             ) {
-                items(filteredTransactions) { tx ->
-                    TransactionCardItem(tx = tx)
+                itemsIndexed(filteredTransactions) { index, tx ->
+                    TransactionCardItem(index = index + 1, tx = tx)
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun ShareOptionsDialog(
+    onDismiss: () -> Unit,
+    onSelect: (String) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("அறிக்கையை பகிரவும்", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("எந்த வடிவில் பகிர வேண்டும்?", style = MaterialTheme.typography.bodyMedium)
+                ShareOptionItem(icon = Icons.Default.Description, label = "Text (எளிமையானது)", onClick = { onSelect("Text") })
+                ShareOptionItem(icon = Icons.Default.Image, label = "Image (புகைப்படம்)", onClick = { onSelect("Image") })
+                ShareOptionItem(icon = Icons.Default.PictureAsPdf, label = "PDF (முழுமையான அறிக்கை)", onClick = { onSelect("PDF") })
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("ரத்து செய்") }
+        }
+    )
+}
+
+@Composable
+fun ShareOptionItem(icon: ImageVector, label: String, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(imageVector = icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(text = label, fontWeight = FontWeight.Medium)
         }
     }
 }

@@ -57,13 +57,13 @@ fun ShopDialog(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = if (existingShop == null) "Add New Shop" else "Edit Shop",
+                            text = if (existingShop == null) "புதிய கடையைச் சேர்க்கவும்" else "கடை விவரத்தைத் திருத்து",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold
                         )
                     }
                     IconButton(onClick = onDismiss) {
-                        Icon(imageVector = Icons.Default.Close, contentDescription = "Close")
+                        Icon(imageVector = Icons.Default.Close, contentDescription = "மூடு")
                     }
                 }
 
@@ -72,8 +72,8 @@ fun ShopDialog(
                 OutlinedTextField(
                     value = shopName,
                     onValueChange = { shopName = it },
-                    label = { Text("Shop Name *") },
-                    placeholder = { Text("e.g. Sri Raja Jewellers") },
+                    label = { Text("கடை பெயர் *") },
+                    placeholder = { Text("எ.கா. ஸ்ரீ ராஜா ஜூவல்லர்ஸ்") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp)
@@ -84,8 +84,8 @@ fun ShopDialog(
                 OutlinedTextField(
                     value = ownerName,
                     onValueChange = { ownerName = it },
-                    label = { Text("Owner Name *") },
-                    placeholder = { Text("e.g. Subba Rao") },
+                    label = { Text("உரிமையாளர் பெயர் *") },
+                    placeholder = { Text("எ.கா. சுப்பா ராவ்") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp)
@@ -96,8 +96,8 @@ fun ShopDialog(
                 OutlinedTextField(
                     value = phone,
                     onValueChange = { phone = it },
-                    label = { Text("Phone Number *") },
-                    placeholder = { Text("e.g. +91 98480 22338") },
+                    label = { Text("தொலைபேசி எண் *") },
+                    placeholder = { Text("எ.கா. +91 98480 22338") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp)
@@ -108,8 +108,8 @@ fun ShopDialog(
                 OutlinedTextField(
                     value = address,
                     onValueChange = { address = it },
-                    label = { Text("Address") },
-                    placeholder = { Text("e.g. Main Road, Vijayawada") },
+                    label = { Text("முகவரி") },
+                    placeholder = { Text("எ.கா. மெயின் ரோடு, சேலம்") },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     maxLines = 2
@@ -120,8 +120,8 @@ fun ShopDialog(
                 OutlinedTextField(
                     value = gstNumber,
                     onValueChange = { gstNumber = it },
-                    label = { Text("GST Number (Optional)") },
-                    placeholder = { Text("e.g. 37AAAAA0000A1Z5") },
+                    label = { Text("ஜிஎஸ்டி எண் (விருப்பத்தேர்வு)") },
+                    placeholder = { Text("எ.கா. 37AAAAA0000A1Z5") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp)
@@ -132,7 +132,7 @@ fun ShopDialog(
                 OutlinedTextField(
                     value = notes,
                     onValueChange = { notes = it },
-                    label = { Text("Notes (Optional)") },
+                    label = { Text("குறிப்புகள் (விருப்பத்தேர்வு)") },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     maxLines = 2
@@ -145,7 +145,7 @@ fun ShopDialog(
                     horizontalArrangement = Arrangement.End
                 ) {
                     TextButton(onClick = onDismiss, modifier = Modifier.padding(end = 8.dp)) {
-                        Text("Cancel")
+                        Text("ரத்து செய்")
                     }
                     Button(
                         onClick = {
@@ -157,7 +157,7 @@ fun ShopDialog(
                         enabled = shopName.isNotBlank() && ownerName.isNotBlank() && phone.isNotBlank(),
                         shape = RoundedCornerShape(10.dp)
                     ) {
-                        Text("Save Shop")
+                        Text("கடையைச் சேமி")
                     }
                 }
             }

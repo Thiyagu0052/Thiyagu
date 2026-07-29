@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "744114743683",
+    "project_id": "kkysilversalem",
+    "storage_bucket": "kkysilversalem.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:744114743683:android:0d7d896ffd64da604f6eb6",
+        "android_client_info": {
+          "package_name": "com.kkySilver.erp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB831QOJ1NHz-94-PCJZTbzru7BRPq3zkw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

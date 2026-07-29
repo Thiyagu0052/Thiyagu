@@ -1,12 +1,13 @@
 package com.example.ui.navigation
 
-import androidx.compose.animation.AnimatedVisibility
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Dashboard
-import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.*
@@ -42,12 +43,12 @@ data class BottomNavItem(
 )
 
 val bottomNavItems = listOf(
-    BottomNavItem(Screen.Dashboard.route, "Dashboard", Icons.Default.Dashboard),
-    BottomNavItem(Screen.Shops.route, "Shops", Icons.Default.Store),
-    BottomNavItem(Screen.Products.route, "Products", Icons.Default.Category),
-    BottomNavItem(Screen.Transactions.route, "Ledger", Icons.Default.ReceiptLong),
-    BottomNavItem(Screen.Reports.route, "Reports", Icons.Default.Assessment),
-    BottomNavItem(Screen.Settings.route, "Settings", Icons.Default.Settings)
+    BottomNavItem(Screen.Dashboard.route, "டாஷ்போர்டு", Icons.Default.Dashboard),
+    BottomNavItem(Screen.Shops.route, "கடைகள்", Icons.Default.Store),
+    BottomNavItem(Screen.Products.route, "தயாரிப்புகள்", Icons.Default.Category),
+    BottomNavItem(Screen.Transactions.route, "லெட்ஜர்", Icons.AutoMirrored.Filled.ReceiptLong),
+    BottomNavItem(Screen.Reports.route, "அறிக்கைகள்", Icons.Default.Assessment),
+    BottomNavItem(Screen.Settings.route, "அமைப்புகள்", Icons.Default.Settings)
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,6 +71,34 @@ fun MainAppStructure(
     val holdSummary by silverViewModel.holdSummary.collectAsState()
     val syncStatus by silverViewModel.syncStatus.collectAsState()
 
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        uri?.let {
+            context.contentResolver.openOutputStream(it)?.let { outputStream ->
+                silverViewModel.exportData(outputStream) { success ->
+                    val message = if (success) "ஏற்றுமதி வெற்றிகரமாக முடிந்தது!" else "ஏற்றுமதி தோல்வியடைந்தது."
+                    android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let {
+            context.contentResolver.openInputStream(it)?.let { inputStream ->
+                silverViewModel.importData(inputStream) { success ->
+                    val message = if (success) "மீட்டமைப்பு வெற்றிகரமாக முடிந்தது!" else "மீட்டமைப்பு தோல்வியடைந்தது."
+                    android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
     val showBottomBar = isLoggedIn && currentRoute != Screen.Login.route
 
     Scaffold(
@@ -78,18 +107,11 @@ fun MainAppStructure(
                 Column {
                     TopAppBar(
                         title = {
-                            Column {
-                                Text(
-                                    text = "SILVER ERP",
-                                    fontWeight = FontWeight.ExtraBold,
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                                Text(
-                                    text = "Wholesale & Retail System",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
+                            Text(
+                                text = "KKY SILVERS",
+                                fontWeight = FontWeight.ExtraBold,
+                                style = MaterialTheme.typography.headlineSmall
+                            )
                         },
                         colors = TopAppBarDefaults.topAppBarColors(
                             containerColor = MaterialTheme.colorScheme.surface
@@ -156,11 +178,11 @@ fun MainAppStructure(
                     onNavigateToShopDetail = { shopId ->
                         navController.navigate(Screen.ShopDetail.createRoute(shopId))
                     },
-                    onAddTransaction = { date, shopId, shopName, type, weight, touch, touchAdj, remarks, imageUri ->
-                        silverViewModel.addTransaction(date, shopId, shopName, type, weight, touch, touchAdj, remarks, imageUri)
+                    onAddTransaction = { date, time, shopId, shopName, type, weight, touch, touchAdj, remarks, imageUri ->
+                        silverViewModel.addTransaction(date, time, shopId, shopName, type, weight, touch, touchAdj, remarks, imageUri)
                     },
-                    onUpdateTransaction = { id, date, shopId, shopName, type, weight, touch, touchAdj, remarks, imageUri ->
-                        silverViewModel.updateTransaction(id, date, shopId, shopName, type, weight, touch, touchAdj, remarks, imageUri)
+                    onUpdateTransaction = { id, date, time, shopId, shopName, type, weight, touch, touchAdj, remarks, imageUri ->
+                        silverViewModel.updateTransaction(id, date, time, shopId, shopName, type, weight, touch, touchAdj, remarks, imageUri)
                     },
                     onDeleteTransaction = { silverViewModel.deleteTransaction(it) }
                 )
@@ -192,11 +214,11 @@ fun MainAppStructure(
                     products = products,
                     transactions = transactions,
                     onUpdateShop = { silverViewModel.updateShop(it) },
-                    onAddTransaction = { date, sId, sName, type, weight, touch, touchAdj, remarks, imageUri ->
-                        silverViewModel.addTransaction(date, sId, sName, type, weight, touch, touchAdj, remarks, imageUri)
+                    onAddTransaction = { date, time, sId, sName, type, weight, touch, touchAdj, remarks, imageUri ->
+                        silverViewModel.addTransaction(date, time, sId, sName, type, weight, touch, touchAdj, remarks, imageUri)
                     },
-                    onUpdateTransaction = { id, date, sId, sName, type, weight, touch, touchAdj, remarks, imageUri ->
-                        silverViewModel.updateTransaction(id, date, sId, sName, type, weight, touch, touchAdj, remarks, imageUri)
+                    onUpdateTransaction = { id, date, time, sId, sName, type, weight, touch, touchAdj, remarks, imageUri ->
+                        silverViewModel.updateTransaction(id, date, time, sId, sName, type, weight, touch, touchAdj, remarks, imageUri)
                     },
                     onDeleteTransaction = { silverViewModel.deleteTransaction(it) },
                     onBack = { navController.popBackStack() }
@@ -219,11 +241,11 @@ fun MainAppStructure(
                     shops = shops,
                     products = products,
                     transactions = transactions,
-                    onAddTransaction = { date, shopId, shopName, type, weight, touch, touchAdj, remarks, imageUri ->
-                        silverViewModel.addTransaction(date, shopId, shopName, type, weight, touch, touchAdj, remarks, imageUri)
+                    onAddTransaction = { date, time, shopId, shopName, type, weight, touch, touchAdj, remarks, imageUri ->
+                        silverViewModel.addTransaction(date, time, shopId, shopName, type, weight, touch, touchAdj, remarks, imageUri)
                     },
-                    onUpdateTransaction = { id, date, shopId, shopName, type, weight, touch, touchAdj, remarks, imageUri ->
-                        silverViewModel.updateTransaction(id, date, shopId, shopName, type, weight, touch, touchAdj, remarks, imageUri)
+                    onUpdateTransaction = { id, date, time, shopId, shopName, type, weight, touch, touchAdj, remarks, imageUri ->
+                        silverViewModel.updateTransaction(id, date, time, shopId, shopName, type, weight, touch, touchAdj, remarks, imageUri)
                     },
                     onDeleteTransaction = { silverViewModel.deleteTransaction(it) }
                 )
@@ -241,7 +263,8 @@ fun MainAppStructure(
                     currentUser = currentUser,
                     syncStatus = syncStatus,
                     onSyncToSupabase = { silverViewModel.syncToFirebase() },
-                    onResetSampleData = { silverViewModel.resetData() },
+                    onExportData = { exportLauncher.launch("silver_erp_backup.json") },
+                    onImportData = { importLauncher.launch(arrayOf("application/json")) },
                     onLogout = {
                         authViewModel.logout()
                         navController.navigate(Screen.Login.route) {

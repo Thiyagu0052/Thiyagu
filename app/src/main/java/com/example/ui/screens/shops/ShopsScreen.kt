@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -65,7 +66,7 @@ fun ShopsScreen(
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                placeholder = { Text("Search shop by name, owner, or phone...") },
+                placeholder = { Text("கடை பெயர், உரிமையாளர் அல்லது தொலைபேசி மூலம் தேடுங்கள்...") },
                 leadingIcon = { Icon(imageVector = Icons.Default.Search, contentDescription = null) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(14.dp),
@@ -80,7 +81,7 @@ fun ShopsScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = if (searchQuery.isBlank()) "No shops added yet." else "No shops matching '$searchQuery'",
+                        text = if (searchQuery.isBlank()) "கடைகள் இன்னும் சேர்க்கப்படவில்லை." else "'$searchQuery' பொருந்தும் கடைகள் எதுவும் இல்லை",
                         color = Color.Gray
                     )
                 }
@@ -90,7 +91,7 @@ fun ShopsScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     contentPadding = PaddingValues(bottom = 80.dp)
                 ) {
-                    items(filteredShops) { shop ->
+                    itemsIndexed(filteredShops) { index, shop ->
                         // Compute shop metrics
                         val shopTxs = transactions.filter { it.shopId == shop.id }
                         var del = 0.0
@@ -105,6 +106,7 @@ fun ShopsScreen(
                         val roundedRet = Math.round(ret * 10.0) / 10.0
 
                         ShopCardItem(
+                            index = index + 1,
                             shop = shop,
                             delivery = roundedDel,
                             returnWeight = roundedRet,
@@ -161,6 +163,7 @@ fun ShopsScreen(
 
 @Composable
 fun ShopCardItem(
+    index: Int,
     shop: Shop,
     delivery: Double,
     returnWeight: Double,
@@ -190,6 +193,13 @@ fun ShopCardItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "$index.",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
                     Icon(
                         imageVector = Icons.Default.Store,
                         contentDescription = null,
@@ -222,7 +232,7 @@ fun ShopCardItem(
             }
 
             Text(
-                text = "Owner: ${shop.ownerName}",
+                text = "உரிமையாளர்: ${shop.ownerName}",
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.DarkGray
             )
@@ -258,17 +268,17 @@ fun ShopCardItem(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
-                    Text("Delivery", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    Text("கொடுத்தல்", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     Text("$delivery g", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = DeliveryBlue)
                 }
 
                 Column {
-                    Text("Return", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    Text("வரவு", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     Text("$returnWeight g", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = ReturnGreen)
                 }
 
                 Column {
-                    Text("Current Hold", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    Text("தற்போதய இருப்பு கடையில்", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     Text("$hold g", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.ExtraBold, color = HoldAmber)
                 }
             }
@@ -278,19 +288,19 @@ fun ShopCardItem(
     if (showConfirmDelete) {
         AlertDialog(
             onDismissRequest = { showConfirmDelete = false },
-            title = { Text("Delete Shop?") },
-            text = { Text("Are you sure you want to delete ${shop.shopName}? Associated transactions will remain in ledger history.") },
+            title = { Text("கடையை நீக்கலாமா?") },
+            text = { Text("${shop.shopName}-ஐ நிச்சயமாக நீக்க விரும்புகிறீர்களா? தொடர்புடைய பரிவர்த்தனைகள் வரலாற்றில் இருக்கும்.") },
             confirmButton = {
                 TextButton(onClick = {
                     onDelete()
                     showConfirmDelete = false
                 }) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                    Text("நீக்கு", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showConfirmDelete = false }) {
-                    Text("Cancel")
+                    Text("ரத்து செய்")
                 }
             }
         )
@@ -306,6 +316,7 @@ fun ShopDetailScreen(
     onUpdateShop: (Shop) -> Unit,
     onAddTransaction: (
         date: String,
+        time: String,
         shopId: Long,
         shopName: String,
         type: String,
@@ -318,6 +329,7 @@ fun ShopDetailScreen(
     onUpdateTransaction: (
         id: Long,
         date: String,
+        time: String,
         shopId: Long,
         shopName: String,
         type: String,
@@ -351,7 +363,7 @@ fun ShopDetailScreen(
 
     if (shop == null) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Shop not found")
+            Text("கடை கிடைக்கவில்லை")
         }
         return
     }
@@ -413,17 +425,17 @@ fun ShopDetailScreen(
                         horizontalArrangement = Arrangement.SpaceAround
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Total Delivery", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+                            Text("மொத்த கொடுத்தல்", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
                             Text("$roundedDel g", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = DeliveryBlue)
                         }
 
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Total Return", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+                            Text("மொத்த வரவு", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
                             Text("$roundedRet g", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = ReturnGreen)
                         }
 
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Current Hold", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+                            Text("தற்போதைய இருப்பு", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
                             Text("$hold g", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = HoldAmber)
                         }
                     }
@@ -433,7 +445,7 @@ fun ShopDetailScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "Shop Transaction Ledger",
+                text = "கடை பரிவர்த்தனை பட்டியல்",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -442,7 +454,7 @@ fun ShopDetailScreen(
 
             if (shopTxs.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No transactions for this shop yet.", color = Color.Gray)
+                    Text("இந்த கடைக்கு இன்னும் பரிவர்த்தனைகள் இல்லை.", color = Color.Gray)
                 }
             } else {
                 LazyColumn(
@@ -450,8 +462,9 @@ fun ShopDetailScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     contentPadding = PaddingValues(bottom = 80.dp)
                 ) {
-                    items(shopTxs) { tx ->
+                    itemsIndexed(shopTxs) { index, tx ->
                         TransactionCardItem(
+                            index = index + 1,
                             tx = tx,
                             onEdit = { editingTransaction = tx },
                             onDelete = { onDeleteTransaction(tx) }
@@ -496,8 +509,8 @@ fun ShopDetailScreen(
             shops = shops,
             products = products,
             onDismiss = { showAddTxDialog = false },
-            onSave = { date, sId, sName, type, weight, touch, touchAdj, remarks, imageUri ->
-                onAddTransaction(date, sId, sName, type, weight, touch, touchAdj, remarks, imageUri)
+            onSave = { date, time, sId, sName, type, weight, touch, touchAdj, remarks, imageUri ->
+                onAddTransaction(date, time, sId, sName, type, weight, touch, touchAdj, remarks, imageUri)
             }
         )
     }
@@ -508,9 +521,9 @@ fun ShopDetailScreen(
             products = products,
             existingTransaction = editingTransaction,
             onDismiss = { editingTransaction = null },
-            onSave = { date, sId, sName, type, weight, touch, touchAdj, remarks, imageUri ->
+            onSave = { date, time, sId, sName, type, weight, touch, touchAdj, remarks, imageUri ->
                 val txId = editingTransaction!!.id
-                onUpdateTransaction(txId, date, sId, sName, type, weight, touch, touchAdj, remarks, imageUri)
+                onUpdateTransaction(txId, date, time, sId, sName, type, weight, touch, touchAdj, remarks, imageUri)
                 editingTransaction = null
             }
         )

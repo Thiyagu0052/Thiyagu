@@ -30,6 +30,7 @@ import com.example.ui.theme.ReturnGreen
 fun TransactionCardItem(
     tx: Transaction,
     modifier: Modifier = Modifier,
+    index: Int? = null,
     onEdit: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null
 ) {
@@ -60,14 +61,24 @@ fun TransactionCardItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (index != null) {
+                        Text(
+                            text = "$index.",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Gray,
+                            modifier = Modifier.padding(end = 4.dp)
+                        )
+                    }
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
                             .background(badgeColor.copy(alpha = 0.15f))
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
+                        val typeEnumDisplay = TransactionType.fromLabel(tx.type)
                         Text(
-                            text = tx.type,
+                            text = typeEnumDisplay.displayLabel,
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
                             color = badgeColor
@@ -75,7 +86,7 @@ fun TransactionCardItem(
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = tx.date,
+                        text = "${tx.date} ${tx.time}".trim(),
                         style = MaterialTheme.typography.labelSmall,
                         color = Color.Gray
                     )
@@ -136,8 +147,9 @@ fun TransactionCardItem(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Gross: ${tx.weight} g | Touch: ${tx.touch}%" + if (tx.touchAdjustment != 0.0) " (+${tx.touchAdjustment}%)" else "",
-                    style = MaterialTheme.typography.bodySmall,
+                    text = "மொத்தம்: ${tx.weight} g | டச்: ${tx.touch}%" + if (tx.touchAdjustment != 0.0) " (+${tx.touchAdjustment}%)" else "",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
                     color = Color.DarkGray
                 )
             }
@@ -145,7 +157,7 @@ fun TransactionCardItem(
             if (tx.remarks.isNotBlank()) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Note: ${tx.remarks}",
+                    text = "குறிப்பு: ${tx.remarks}",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.Gray
                 )
@@ -189,7 +201,7 @@ fun TransactionCardItem(
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = if (imageList.size > 1) "View ${imageList.size} Proof Photos 📷" else "View Proof Image 🔍",
+                        text = if (imageList.size > 1) "${imageList.size} இணைப்பு படங்கள் 📷" else "இணைப்பு படங்கள் 🔍",
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary
@@ -202,19 +214,19 @@ fun TransactionCardItem(
     if (showConfirmDelete && onDelete != null) {
         AlertDialog(
             onDismissRequest = { showConfirmDelete = false },
-            title = { Text("Delete Transaction?") },
-            text = { Text("Are you sure you want to remove this ${tx.type} entry of ${tx.pureWeight}g Pure for ${tx.shopName}?") },
+            title = { Text("பரிவர்த்தனையை நீக்கலாமா?") },
+            text = { Text("${tx.shopName}-க்கான இந்த ${TransactionType.fromLabel(tx.type).displayLabel} பதிவை (${tx.pureWeight}g) நீக்க விரும்புகிறீர்களா?") },
             confirmButton = {
                 TextButton(onClick = {
                     onDelete()
                     showConfirmDelete = false
                 }) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                    Text("நீக்கு", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showConfirmDelete = false }) {
-                    Text("Cancel")
+                    Text("ரத்து செய்")
                 }
             }
         )
@@ -225,7 +237,7 @@ fun TransactionCardItem(
         if (imageList.isNotEmpty()) {
             ImagePreviewDialog(
                 imageUris = imageList,
-                title = "Proof Images - ${tx.shopName} (${tx.date})",
+                title = "Proof Images - ${tx.shopName} (${tx.date} ${tx.time})",
                 onDismiss = { showImagePreview = false }
             )
         }

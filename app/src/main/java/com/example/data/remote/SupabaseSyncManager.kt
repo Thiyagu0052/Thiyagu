@@ -132,6 +132,7 @@ class SupabaseSyncManager {
                     put("entity_type", "transaction")
                     put("id", tx.id)
                     put("date", tx.date)
+                    put("time", tx.time)
                     put("shopId", tx.shopId)
                     put("shopName", tx.shopName)
                     put("type", tx.type)

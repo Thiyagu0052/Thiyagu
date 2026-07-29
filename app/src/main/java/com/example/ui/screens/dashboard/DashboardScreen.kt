@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -52,6 +53,7 @@ fun DashboardScreen(
     onNavigateToShopDetail: (Long) -> Unit,
     onAddTransaction: (
         date: String,
+        time: String,
         shopId: Long,
         shopName: String,
         type: String,
@@ -64,6 +66,7 @@ fun DashboardScreen(
     onUpdateTransaction: (
         id: Long,
         date: String,
+        time: String,
         shopId: Long,
         shopName: String,
         type: String,
@@ -131,13 +134,14 @@ fun DashboardScreen(
                     ) {
                         Column {
                             Text(
-                                text = "Silver ERP Wholesale",
-                                style = MaterialTheme.typography.labelMedium,
+                                text = "KKY Silvers",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
                                 color = Color(0xFF94A3B8)
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "Business Dashboard",
+                                text = "டாஷ்போர்டு",
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
@@ -151,7 +155,7 @@ fun DashboardScreen(
                         ) {
                             Icon(imageVector = Icons.Default.Add, contentDescription = null)
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("New Entry")
+                            Text("புதிய பதிவு")
                         }
                     }
                 }
@@ -176,12 +180,12 @@ fun DashboardScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Shop Hold Summaries",
+                            text = "கடை இருப்பு விவரம்",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                         TextButton(onClick = onNavigateToShops) {
-                            Text("View All")
+                            Text("அனைத்தையும் பார்க்க")
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                                 contentDescription = null,
@@ -194,7 +198,7 @@ fun DashboardScreen(
 
                     if (shopHoldSummaries.isEmpty()) {
                         Text(
-                            text = "No shops registered yet. Add a shop to view hold summary.",
+                            text = "கடைகள் இன்னும் சேர்க்கப்படவில்லை. விவரங்களைக் காண ஒரு கடையைச் சேர்க்கவும்.",
                             style = MaterialTheme.typography.bodySmall,
                             color = Color.Gray
                         )
@@ -202,7 +206,7 @@ fun DashboardScreen(
                         LazyRow(
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            items(shopHoldSummaries) { (shop, metrics, txCount) ->
+                            itemsIndexed(shopHoldSummaries) { index, (shop, metrics, txCount) ->
                                 val (del, ret, hold) = metrics
                                 Card(
                                     modifier = Modifier
@@ -219,7 +223,7 @@ fun DashboardScreen(
                                             .padding(14.dp)
                                     ) {
                                         Text(
-                                            text = shop.shopName,
+                                            text = "${index + 1}. ${shop.shopName}",
                                             style = MaterialTheme.typography.titleSmall,
                                             fontWeight = FontWeight.Bold,
                                             maxLines = 1
@@ -236,7 +240,7 @@ fun DashboardScreen(
                                             modifier = Modifier.fillMaxWidth(),
                                             horizontalArrangement = Arrangement.SpaceBetween
                                         ) {
-                                            Text("Delivery", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                                            Text("கொடுத்தல்", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                                             Text("$del g", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = DeliveryBlue)
                                         }
 
@@ -244,7 +248,7 @@ fun DashboardScreen(
                                             modifier = Modifier.fillMaxWidth(),
                                             horizontalArrangement = Arrangement.SpaceBetween
                                         ) {
-                                            Text("Return", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                                            Text("வரவு", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                                             Text("$ret g", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = ReturnGreen)
                                         }
 
@@ -259,7 +263,7 @@ fun DashboardScreen(
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Text(
-                                                text = "Hold: $hold g",
+                                                text = "தற்போதய இருப்பு கடையில்: $hold g",
                                                 style = MaterialTheme.typography.labelMedium,
                                                 fontWeight = FontWeight.Bold,
                                                 color = HoldAmber
@@ -281,12 +285,12 @@ fun DashboardScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Recent Transactions Ledger",
+                        text = "சமீபத்திய பரிவர்த்தனைகள்",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                     TextButton(onClick = onNavigateToTransactions) {
-                        Text("Full Ledger")
+                        Text("முழு விவரம்")
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                             contentDescription = null,
@@ -309,17 +313,18 @@ fun DashboardScreen(
                                 .padding(24.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text("No transactions recorded yet.", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+                            Text("பதிவுகள் எதுவும் இல்லை.", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
                             Spacer(modifier = Modifier.height(8.dp))
                             Button(onClick = { showAddTransactionDialog = true }) {
-                                Text("Add First Transaction")
+                                Text("முதல் பரிவர்த்தனையைச் சேர்க்கவும்")
                             }
                         }
                     }
                 }
             } else {
-                items(recentTransactions) { tx ->
+                itemsIndexed(recentTransactions) { index, tx ->
                     TransactionCardItem(
+                        index = index + 1,
                         tx = tx,
                         onEdit = { editingTransaction = tx },
                         onDelete = { onDeleteTransaction(tx) }
@@ -345,8 +350,8 @@ fun DashboardScreen(
             shops = shops,
             products = products,
             onDismiss = { showAddTransactionDialog = false },
-            onSave = { date, shopId, shopName, type, weight, touch, touchAdj, remarks, imageUri ->
-                onAddTransaction(date, shopId, shopName, type, weight, touch, touchAdj, remarks, imageUri)
+            onSave = { date, time, shopId, shopName, type, weight, touch, touchAdj, remarks, imageUri ->
+                onAddTransaction(date, time, shopId, shopName, type, weight, touch, touchAdj, remarks, imageUri)
             }
         )
     }
@@ -357,9 +362,9 @@ fun DashboardScreen(
             products = products,
             existingTransaction = editingTransaction,
             onDismiss = { editingTransaction = null },
-            onSave = { date, shopId, shopName, type, weight, touch, touchAdj, remarks, imageUri ->
+            onSave = { date, time, shopId, shopName, type, weight, touch, touchAdj, remarks, imageUri ->
                 val txId = editingTransaction!!.id
-                onUpdateTransaction(txId, date, shopId, shopName, type, weight, touch, touchAdj, remarks, imageUri)
+                onUpdateTransaction(txId, date, time, shopId, shopName, type, weight, touch, touchAdj, remarks, imageUri)
                 editingTransaction = null
             }
         )

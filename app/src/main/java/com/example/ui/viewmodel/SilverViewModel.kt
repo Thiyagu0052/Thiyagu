@@ -1,9 +1,12 @@
 package com.example.ui.viewmodel
 
 import android.app.Application
+import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.local.AppDatabase
+import com.example.data.model.BackupData
 import com.example.data.model.HoldSummary
 import com.example.data.model.Product
 import com.example.data.model.PureWeightCalculator
@@ -13,6 +16,9 @@ import com.example.data.repository.SilverRepository
 import com.example.data.remote.FirebaseSyncManager
 import com.example.data.remote.SyncStatus
 import com.example.util.ImageUtils
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -20,12 +26,19 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.InputStream
+import java.io.OutputStream
 
 class SilverViewModel(application: Application) : AndroidViewModel(application) {
 
     private val db = AppDatabase.getDatabase(application)
-    private val repository = SilverRepository(db.shopDao(), db.productDao(), db.transactionDao())
+    private val repository = SilverRepository(db)
     val firebaseSyncManager = FirebaseSyncManager()
+
+    private val moshi = Moshi.Builder()
+        .add(KotlinJsonAdapterFactory())
+        .build()
 
     val syncStatus: StateFlow<SyncStatus> = firebaseSyncManager.syncStatus
 
@@ -136,13 +149,25 @@ class SilverViewModel(application: Application) : AndroidViewModel(application) 
 
     fun updateShop(shop: Shop) {
         viewModelScope.launch {
-            repository.updateShop(shop)
-            firebaseSyncManager.syncShop(shop)
+            val trimmedShop = shop.copy(
+                shopName = shop.shopName.trim(),
+                ownerName = shop.ownerName.trim(),
+                phone = shop.phone.trim(),
+                address = shop.address.trim(),
+                gstNumber = shop.gstNumber.trim(),
+                notes = shop.notes.trim()
+            )
+            repository.updateShop(trimmedShop)
+            firebaseSyncManager.syncShop(trimmedShop)
+
+            // Update local transactions if shop name changed, but sync only if necessary
             val currentTxs = transactions.value
             currentTxs.filter { it.shopId == shop.id }.forEach { tx ->
-                if (tx.shopName != shop.shopName) {
-                    val updatedTx = tx.copy(shopName = shop.shopName)
+                if (tx.shopName != trimmedShop.shopName) {
+                    val updatedTx = tx.copy(shopName = trimmedShop.shopName)
                     repository.updateTransaction(updatedTx)
+                    // Optional: syncTransaction(updatedTx) if you want Firebase to stay perfectly in sync
+                    // but for now, we'll keep it simple to avoid rate limiting
                     firebaseSyncManager.syncTransaction(updatedTx)
                 }
             }
@@ -193,6 +218,7 @@ class SilverViewModel(application: Application) : AndroidViewModel(application) 
     // Transaction Operations
     fun addTransaction(
         date: String,
+        time: String,
         shopId: Long,
         shopName: String,
         type: String,
@@ -207,6 +233,7 @@ class SilverViewModel(application: Application) : AndroidViewModel(application) 
             val hostedImageUri = uploadTransactionImages(imageUri)
             val tx = Transaction(
                 date = date,
+                time = time,
                 shopId = shopId,
                 shopName = shopName,
                 type = type,
@@ -225,6 +252,7 @@ class SilverViewModel(application: Application) : AndroidViewModel(application) 
     fun updateTransaction(
         id: Long,
         date: String,
+        time: String,
         shopId: Long,
         shopName: String,
         type: String,
@@ -240,6 +268,7 @@ class SilverViewModel(application: Application) : AndroidViewModel(application) 
             val tx = Transaction(
                 id = id,
                 date = date,
+                time = time,
                 shopId = shopId,
                 shopName = shopName,
                 type = type,
@@ -266,6 +295,56 @@ class SilverViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch {
             repository.clearAllData()
             syncToFirebase()
+        }
+    }
+
+    fun exportData(outputStream: OutputStream, onComplete: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val shops = repository.allShops.first()
+                val products = repository.allProducts.first()
+                val transactions = repository.allTransactions.first()
+                val backup = BackupData(shops, products, transactions)
+
+                val adapter = moshi.adapter(BackupData::class.java)
+                val json = adapter.toJson(backup)
+
+                withContext(Dispatchers.IO) {
+                    outputStream.use { it.write(json.toByteArray()) }
+                }
+                onComplete(true)
+            } catch (e: Exception) {
+                Log.e("SilverViewModel", "Export failed", e)
+                onComplete(false)
+            }
+        }
+    }
+
+    fun importData(inputStream: InputStream, onComplete: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val json = withContext(Dispatchers.IO) {
+                    inputStream.use { it.readBytes().toString(Charsets.UTF_8) }
+                }
+
+                val adapter = moshi.adapter(BackupData::class.java)
+                val backup = adapter.fromJson(json)
+
+                if (backup != null) {
+                    repository.clearAllData()
+                    // Re-insert everything
+                    backup.shops.forEach { repository.insertShop(it) }
+                    backup.products.forEach { repository.insertProduct(it) }
+                    backup.transactions.forEach { repository.insertTransaction(it) }
+                    syncToFirebase()
+                    onComplete(true)
+                } else {
+                    onComplete(false)
+                }
+            } catch (e: Exception) {
+                Log.e("SilverViewModel", "Import failed", e)
+                onComplete(false)
+            }
         }
     }
 }

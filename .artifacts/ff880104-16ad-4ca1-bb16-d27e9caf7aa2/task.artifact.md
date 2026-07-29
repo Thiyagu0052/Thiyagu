@@ -1,0 +1,17 @@
+- `[x]` Configure FileProvider for sharing
+    - `[x]` Create `res/xml/file_paths.xml`
+    - `[x]` Update `AndroidManifest.xml` with `<provider>`
+- `[x]` Implement `ReportSharingUtils.kt`
+    - `[x]` Implement `shareTextReport` with enhanced table format
+    - `[x]` Implement `shareImageReport` (Bitmap generation)
+    - `[x]` Implement `sharePdfReport` (PDF generation with images)
+- `[x]` Initial Sharing Implementation
+- `[x]` Refine Sharing & Display
+    - `[x]` Sort transactions by date (Low to High)
+    - `[x]` Update "நிகர" to "Pure(g)" in all reports
+    - `[x]` PDF: Add table borders
+    - `[x]` PDF: Improve image resolution
+- `[x]` Verification
+    - `[ ]` Verify Text Share
+    - `[ ]` Verify Image Share
+    - `[ ]` Verify PDF Share

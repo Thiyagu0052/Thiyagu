@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -33,6 +34,7 @@ fun TransactionsScreen(
     transactions: List<Transaction>,
     onAddTransaction: (
         date: String,
+        time: String,
         shopId: Long,
         shopName: String,
         type: String,
@@ -45,6 +47,7 @@ fun TransactionsScreen(
     onUpdateTransaction: (
         id: Long,
         date: String,
+        time: String,
         shopId: Long,
         shopName: String,
         type: String,
@@ -72,7 +75,7 @@ fun TransactionsScreen(
             val matchesType = selectedTypeFilter == null || tx.type.equals(selectedTypeFilter, ignoreCase = true)
             val matchesShop = selectedShopFilterId == null || tx.shopId == selectedShopFilterId
             matchesQuery && matchesType && matchesShop
-        }
+        }.sortedWith(compareBy({ it.date }, { it.time }))
     }
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -85,7 +88,7 @@ fun TransactionsScreen(
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                placeholder = { Text("Search shop name, type, remarks...") },
+                placeholder = { Text("கடை பெயர், வகை, குறிப்புகள் மூலம் தேடுங்கள்...") },
                 leadingIcon = { Icon(imageVector = Icons.Default.Search, contentDescription = null) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(14.dp),
@@ -103,7 +106,7 @@ fun TransactionsScreen(
                     FilterChip(
                         selected = selectedTypeFilter == null,
                         onClick = { selectedTypeFilter = null },
-                        label = { Text("All Types") }
+                        label = { Text("அனைத்து வகைகள்") }
                     )
                 }
 
@@ -113,7 +116,7 @@ fun TransactionsScreen(
                         onClick = {
                             selectedTypeFilter = if (selectedTypeFilter == type.label) null else type.label
                         },
-                        label = { Text(type.label) }
+                        label = { Text(type.displayLabel) }
                     )
                 }
             }
@@ -127,7 +130,7 @@ fun TransactionsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Transaction Ledger (${filteredTransactions.size} Records)",
+                    text = "பரிவர்த்தனை லெட்ஜர் (${filteredTransactions.size} பதிவுகள்)",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     color = Color.DarkGray
@@ -142,7 +145,7 @@ fun TransactionsScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "No transaction records found.",
+                        text = "பரிவர்த்தனை விவரங்கள் இல்லை.",
                         color = Color.Gray
                     )
                 }
@@ -152,8 +155,9 @@ fun TransactionsScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     contentPadding = PaddingValues(bottom = 80.dp)
                 ) {
-                    items(filteredTransactions) { tx ->
+                    itemsIndexed(filteredTransactions) { index, tx ->
                         TransactionCardItem(
+                            index = index + 1,
                             tx = tx,
                             onEdit = { editingTransaction = tx },
                             onDelete = { onDeleteTransaction(tx) }
@@ -179,8 +183,8 @@ fun TransactionsScreen(
             shops = shops,
             products = products,
             onDismiss = { showAddTransactionDialog = false },
-            onSave = { date, shopId, shopName, type, weight, touch, touchAdj, remarks, imageUri ->
-                onAddTransaction(date, shopId, shopName, type, weight, touch, touchAdj, remarks, imageUri)
+            onSave = { date, time, shopId, shopName, type, weight, touch, touchAdj, remarks, imageUri ->
+                onAddTransaction(date, time, shopId, shopName, type, weight, touch, touchAdj, remarks, imageUri)
             }
         )
     }
@@ -191,9 +195,9 @@ fun TransactionsScreen(
             products = products,
             existingTransaction = editingTransaction,
             onDismiss = { editingTransaction = null },
-            onSave = { date, shopId, shopName, type, weight, touch, touchAdj, remarks, imageUri ->
+            onSave = { date, time, shopId, shopName, type, weight, touch, touchAdj, remarks, imageUri ->
                 val txId = editingTransaction!!.id
-                onUpdateTransaction(txId, date, shopId, shopName, type, weight, touch, touchAdj, remarks, imageUri)
+                onUpdateTransaction(txId, date, time, shopId, shopName, type, weight, touch, touchAdj, remarks, imageUri)
                 editingTransaction = null
             }
         )

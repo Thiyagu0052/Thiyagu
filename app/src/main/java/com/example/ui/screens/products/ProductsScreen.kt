@@ -24,6 +24,7 @@ import coil.compose.AsyncImage
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.filled.Edit
 import com.example.data.model.Product
+import com.example.ui.components.ImagePreviewDialog
 import com.example.ui.components.ProductDialog
 import com.example.util.ImageUtils
 
@@ -141,6 +142,7 @@ fun ProductGridItem(
     onDelete: () -> Unit
 ) {
     var showConfirmDelete by remember { mutableStateOf(false) }
+    var showImagePreview by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier
@@ -160,7 +162,12 @@ fun ProductGridItem(
                     .fillMaxWidth()
                     .height(100.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)),
+                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f))
+                    .then(
+                        if (product.imageUri.isNotBlank()) {
+                            Modifier.clickable { showImagePreview = true }
+                        } else Modifier
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 if (product.imageUri.isNotBlank()) {
@@ -259,6 +266,14 @@ fun ProductGridItem(
                     Text("Cancel")
                 }
             }
+        )
+    }
+
+    if (showImagePreview && product.imageUri.isNotBlank()) {
+        ImagePreviewDialog(
+            imageUri = product.imageUri,
+            title = product.productName,
+            onDismiss = { showImagePreview = false }
         )
     }
 }
