@@ -1,0 +1,6 @@
+{
+  "name": "Silver ERP",
+  "description": "Lightweight Silver Wholesale & Retail Management System with shops, products, transactions ledger, pure weight calculation, and reports.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
