@@ -83,7 +83,10 @@ fun DashboardScreen(
     var editingTransaction by remember { mutableStateOf<Transaction?>(null) }
 
     val recentTransactions = remember(transactions) {
-        transactions.take(5)
+        // Take the 5 most recent ones, but display them in old-to-new order
+        transactions.sortedWith(compareByDescending<Transaction> { it.date }.thenByDescending { it.time })
+            .take(5)
+            .reversed()
     }
 
     // Calculate per-shop hold breakdown for summary carousel
@@ -115,8 +118,8 @@ fun DashboardScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 16.dp),
-            contentPadding = PaddingValues(top = 16.dp, bottom = 88.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            contentPadding = PaddingValues(top = 8.dp, bottom = 72.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Header
             item {
@@ -128,22 +131,22 @@ fun DashboardScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(20.dp),
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = "KKY Silvers",
-                                style = MaterialTheme.typography.titleMedium,
+                                style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF94A3B8)
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = "டாஷ்போர்டு",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.ExtraBold,
                                 color = Color.White
                             )
                         }
@@ -151,11 +154,12 @@ fun DashboardScreen(
                         Button(
                             onClick = { showAddTransactionDialog = true },
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
                         ) {
-                            Icon(imageVector = Icons.Default.Add, contentDescription = null)
+                            Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("புதிய பதிவு")
+                            Text("புதிய பதிவு", style = MaterialTheme.typography.labelSmall)
                         }
                     }
                 }

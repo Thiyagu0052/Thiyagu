@@ -36,11 +36,11 @@ fun SummaryCardsSection(
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             SummaryCard(
                 title = "மொத்த கொடுத்தல்",
@@ -67,7 +67,7 @@ fun SummaryCardsSection(
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             SummaryCard(
                 title = "தற்போதைய இருப்பு",
@@ -114,7 +114,7 @@ fun SummaryCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(8.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -123,14 +123,15 @@ fun SummaryCard(
             ) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleSmall,
+                    style = MaterialTheme.typography.labelSmall,
                     color = Color(0xFF475569),
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1
                 )
                 Box(
                     modifier = Modifier
-                        .size(36.dp)
-                        .clip(RoundedCornerShape(10.dp))
+                        .size(24.dp)
+                        .clip(RoundedCornerShape(6.dp))
                         .background(contentColor.copy(alpha = 0.15f)),
                     contentAlignment = Alignment.Center
                 ) {
@@ -138,27 +139,29 @@ fun SummaryCard(
                         imageVector = icon,
                         contentDescription = title,
                         tint = contentColor,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(14.dp)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             Text(
                 text = value,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Black,
                 color = Color(0xFF0F172A),
-                fontSize = 22.sp
+                fontSize = 15.sp
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(0.dp))
 
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.labelSmall,
-                color = Color(0xFF64748B)
+                color = Color(0xFF64748B),
+                maxLines = 1,
+                fontSize = 8.sp
             )
         }
     }

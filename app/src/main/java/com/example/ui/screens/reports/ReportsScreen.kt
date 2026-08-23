@@ -36,6 +36,7 @@ import com.example.util.ReportSharingUtils
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.example.data.model.TransactionWithBalance
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,25 +58,37 @@ fun ReportsScreen(
     val sdf = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
     val displayDateSdf = remember { SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()) }
 
-    val filteredTransactions = remember(transactions, selectedShopId, datePickerState.selectedStartDateMillis, datePickerState.selectedEndDateMillis) {
-        transactions.filter { tx ->
-            val matchesShop = selectedShopId == null || tx.shopId == selectedShopId
+    // Logic: 
+    // 1. Filter all transactions by Shop first (to get true running balance)
+    // 2. Sort by date/time
+    // 3. Calculate running balance
+    // 4. Filter by Date Range for display
+    val transactionsWithBalance = remember(transactions, selectedShopId, datePickerState.selectedStartDateMillis, datePickerState.selectedEndDateMillis) {
+        val shopFiltered = transactions.filter { selectedShopId == null || it.shopId == selectedShopId }
+            .sortedWith(compareBy({ it.date }, { it.time }))
+        
+        var currentRunningBalance = 0.0
+        val withBalance = shopFiltered.map { tx ->
+            val type = TransactionType.fromLabel(tx.type)
+            if (type.isDeliveryType) currentRunningBalance += tx.pureWeight
+            else if (type.isReturnType) currentRunningBalance -= tx.pureWeight
             
-            val txTime = try { sdf.parse(tx.date)?.time ?: 0L } catch (e: Exception) { 0L }
+            TransactionWithBalance(tx, Math.round(currentRunningBalance * 10.0) / 10.0)
+        }
+
+        withBalance.filter { item ->
+            val txTime = try { sdf.parse(item.tx.date)?.time ?: 0L } catch (e: Exception) { 0L }
             val start = datePickerState.selectedStartDateMillis
             val end = datePickerState.selectedEndDateMillis
             
-            val matchesDate = if (start != null && end != null) {
-                // Buffer to end of day for endDate
+            if (start != null && end != null) {
                 txTime in start..end
             } else if (start != null) {
                 txTime >= start
             } else if (end != null) {
                 txTime <= end
             } else true
-            
-            matchesShop && matchesDate
-        }.sortedWith(compareBy({ it.date }, { it.time }))
+        }
     }
 
     val formattedDateRange = remember(datePickerState.selectedStartDateMillis, datePickerState.selectedEndDateMillis) {
@@ -93,7 +106,8 @@ fun ReportsScreen(
     // Calculations
     var deliverySum = 0.0
     var returnSum = 0.0
-    filteredTransactions.forEach { tx ->
+    transactionsWithBalance.forEach { item ->
+        val tx = item.tx
         val type = TransactionType.fromLabel(tx.type)
         if (type.isDeliveryType) deliverySum += tx.pureWeight
         else if (type.isReturnType) returnSum += tx.pureWeight
@@ -107,19 +121,23 @@ fun ReportsScreen(
             onDismiss = { showShareDialog = false },
             onSelect = { format ->
                 showShareDialog = false
+                // Extract just transactions for sharing utils, but maybe we should pass balances too?
+                // The prompt asked for "each entry provide hold minus current like bank statement as last column"
+                // So the sharing utils also need the balances.
+                
                 when (format) {
                     "Text" -> ReportSharingUtils.shareTextReport(
-                        context, selectedShopName, filteredTransactions,
+                        context, selectedShopName, transactionsWithBalance,
                         roundedDelivery, roundedReturn, roundedHold,
                         formattedDateRange
                     )
                     "Image" -> ReportSharingUtils.shareImageReport(
-                        context, selectedShopName, filteredTransactions,
+                        context, selectedShopName, transactionsWithBalance,
                         roundedDelivery, roundedReturn, roundedHold,
                         formattedDateRange
                     )
                     "PDF" -> ReportSharingUtils.sharePdfReport(
-                        context, selectedShopName, filteredTransactions,
+                        context, selectedShopName, transactionsWithBalance,
                         roundedDelivery, roundedReturn, roundedHold,
                         formattedDateRange
                     )
@@ -256,13 +274,13 @@ fun ReportsScreen(
         // Summary Banner
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(12.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.padding(12.dp)) {
                 Text(
                     text = "இருப்பு விவரம் ($selectedShopName)",
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
@@ -275,21 +293,30 @@ fun ReportsScreen(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceAround
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("மொத்த கொடுத்தல்", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
-                        Text("$roundedDelivery g", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = DeliveryBlue)
+                    Column(
+                        modifier = Modifier.weight(1.1f),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("ஜதை கொடுத்தல்", style = MaterialTheme.typography.labelSmall, color = Color.Gray, maxLines = 1)
+                        Text("$roundedDelivery g", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = DeliveryBlue)
                     }
 
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("மொத்த வரவு", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
-                        Text("$roundedReturn g", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = ReturnGreen)
+                    Column(
+                        modifier = Modifier.weight(1.1f),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("வெள்ளி வரவு", style = MaterialTheme.typography.labelSmall, color = Color.Gray, maxLines = 1)
+                        Text("$roundedReturn g", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = ReturnGreen)
                     }
 
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("தற்போதைய இருப்பு", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
-                        Text("$roundedHold g", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold, color = HoldAmber)
+                    Column(
+                        modifier = Modifier.weight(0.8f),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("இருப்பு", style = MaterialTheme.typography.labelSmall, color = Color.Gray, maxLines = 1)
+                        Text("$roundedHold g", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Black, color = HoldAmber)
                     }
                 }
             }
@@ -298,14 +325,14 @@ fun ReportsScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "அறிக்கை விவரம் (${filteredTransactions.size} பதிவுகள்)",
+            text = "அறிக்கை விவரம் (${transactionsWithBalance.size} பதிவுகள்)",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        if (filteredTransactions.isEmpty()) {
+        if (transactionsWithBalance.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text("தகவல் இல்லை.", color = Color.Gray)
             }
@@ -315,8 +342,14 @@ fun ReportsScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 contentPadding = PaddingValues(bottom = 20.dp)
             ) {
-                itemsIndexed(filteredTransactions) { index, tx ->
-                    TransactionCardItem(index = index + 1, tx = tx)
+                itemsIndexed(transactionsWithBalance) { index, item ->
+                    TransactionCardItem(
+                        index = index + 1,
+                        tx = item.tx,
+                        balance = item.balanceAtThisPoint,
+                        showTime = false,
+                        isReport = true
+                    )
                 }
             }
         }

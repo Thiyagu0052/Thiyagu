@@ -27,6 +27,7 @@ data class Shop(
     val gstNumber: String = "",
     val notes: String = "",
     val createdAt: Long = System.currentTimeMillis(),
+    val isoTimestamp: String = "",
 )
 
 @Entity(tableName = "products")
@@ -38,6 +39,7 @@ data class Product(
     val defaultWeight: Double = 0.0,
     val imageUri: String = "",
     val createdAt: Long = System.currentTimeMillis(),
+    val isoTimestamp: String = "",
 )
 
 @Entity(tableName = "transactions")
@@ -46,6 +48,7 @@ data class Transaction(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val date: String, // YYYY-MM-DD format
     val time: String = "", // HH:mm format
+    val timeAmPm: String = "", // hh:mm a format
     val shopId: Long,
     val shopName: String,
     val type: String, // Delivery, Return Kacha, Return Fine, Settlement
@@ -56,6 +59,12 @@ data class Transaction(
     val remarks: String = "",
     val imageUri: String = "",
     val createdAt: Long = System.currentTimeMillis(),
+    val isoTimestamp: String = "",
+)
+
+data class TransactionWithBalance(
+    val tx: Transaction,
+    val balanceAtThisPoint: Double
 )
 
 @JsonClass(generateAdapter = true)

@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ShopDao {
-    @Query("SELECT * FROM shops ORDER BY shopName ASC")
+    @Query("SELECT * FROM shops ORDER BY createdAt ASC")
     fun getAllShops(): Flow<List<Shop>>
 
     @Query("SELECT * FROM shops WHERE id = :id LIMIT 1")

@@ -20,10 +20,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 
 sealed class SyncStatus {
     object Idle : SyncStatus()
@@ -91,7 +87,8 @@ class FirebaseSyncManager {
                                     address = doc.getString("address") ?: "",
                                     gstNumber = doc.getString("gstNumber") ?: "",
                                     notes = doc.getString("notes") ?: "",
-                                    createdAt = doc.getLong("createdAt") ?: System.currentTimeMillis()
+                                    createdAt = doc.getLong("createdAt") ?: System.currentTimeMillis(),
+                                    isoTimestamp = doc.getString("isoTimestamp") ?: ""
                                 )
                             } catch (e: Exception) {
                                 Log.e(TAG, "Error parsing shop doc ${doc.id}", e)
@@ -120,7 +117,8 @@ class FirebaseSyncManager {
                                     category = doc.getString("category") ?: "",
                                     defaultWeight = doc.getDouble("defaultWeight") ?: 0.0,
                                     imageUri = doc.getString("imageUri") ?: "",
-                                    createdAt = doc.getLong("createdAt") ?: System.currentTimeMillis()
+                                    createdAt = doc.getLong("createdAt") ?: System.currentTimeMillis(),
+                                    isoTimestamp = doc.getString("isoTimestamp") ?: ""
                                 )
                             } catch (e: Exception) {
                                 Log.e(TAG, "Error parsing product doc ${doc.id}", e)
@@ -145,6 +143,8 @@ class FirebaseSyncManager {
                                 Transaction(
                                     id = doc.getLong("id") ?: doc.id.toLongOrNull() ?: return@mapNotNull null,
                                     date = doc.getString("date") ?: "",
+                                    time = doc.getString("time") ?: "",
+                                    timeAmPm = doc.getString("timeAmPm") ?: "",
                                     shopId = doc.getLong("shopId") ?: 0L,
                                     shopName = doc.getString("shopName") ?: "",
                                     type = doc.getString("type") ?: "",
@@ -154,7 +154,8 @@ class FirebaseSyncManager {
                                     pureWeight = doc.getDouble("pureWeight") ?: 0.0,
                                     remarks = doc.getString("remarks") ?: "",
                                     imageUri = doc.getString("imageUri") ?: "",
-                                    createdAt = doc.getLong("createdAt") ?: System.currentTimeMillis()
+                                    createdAt = doc.getLong("createdAt") ?: System.currentTimeMillis(),
+                                    isoTimestamp = doc.getString("isoTimestamp") ?: ""
                                 )
                             } catch (e: Exception) {
                                 Log.e(TAG, "Error parsing transaction doc ${doc.id}", e)
@@ -191,6 +192,7 @@ class FirebaseSyncManager {
                 "gstNumber" to shop.gstNumber,
                 "notes" to shop.notes,
                 "createdAt" to shop.createdAt,
+                "isoTimestamp" to shop.isoTimestamp,
                 "updatedAt" to System.currentTimeMillis()
             )
             firestore.collection(COLLECTION_SHOPS).document(shop.id.toString()).set(map).await()
@@ -224,6 +226,7 @@ class FirebaseSyncManager {
                 "defaultWeight" to product.defaultWeight,
                 "imageUri" to product.imageUri,
                 "createdAt" to product.createdAt,
+                "isoTimestamp" to product.isoTimestamp,
                 "updatedAt" to System.currentTimeMillis()
             )
             firestore.collection(COLLECTION_PRODUCTS).document(product.id.toString()).set(map).await()
@@ -252,6 +255,7 @@ class FirebaseSyncManager {
                 "id" to transaction.id,
                 "date" to transaction.date,
                 "time" to transaction.time,
+                "timeAmPm" to transaction.timeAmPm,
                 "shopId" to transaction.shopId,
                 "shopName" to transaction.shopName,
                 "type" to transaction.type,
@@ -262,6 +266,7 @@ class FirebaseSyncManager {
                 "remarks" to transaction.remarks,
                 "imageUri" to transaction.imageUri,
                 "createdAt" to transaction.createdAt,
+                "isoTimestamp" to transaction.isoTimestamp,
                 "updatedAt" to System.currentTimeMillis()
             )
             firestore.collection(COLLECTION_TRANSACTIONS).document(transaction.id.toString()).set(map).await()
@@ -325,40 +330,7 @@ class FirebaseSyncManager {
             return@withContext localUriString
         }
 
-        // Try uploading to Supabase Storage first
-        try {
-            val filename = "proofs/${UUID.randomUUID()}.jpg"
-            val uploadUrl = "${SupabaseSyncManager.SUPABASE_URL}/storage/v1/object/${SupabaseSyncManager.STORAGE_BUCKET}/$filename"
-            val mediaType = "image/jpeg".toMediaType()
-            val requestBody = bytes.toRequestBody(mediaType)
-
-            val httpClient = OkHttpClient.Builder()
-                .connectTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
-                .readTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
-                .build()
-
-            val request = Request.Builder()
-                .url(uploadUrl)
-                .post(requestBody)
-                .addHeader("apikey", SupabaseSyncManager.SUPABASE_KEY)
-                .addHeader("Authorization", "Bearer ${SupabaseSyncManager.SUPABASE_KEY}")
-                .addHeader("Content-Type", "image/jpeg")
-                .build()
-
-            httpClient.newCall(request).execute().use { response ->
-                if (response.isSuccessful || response.code == 200 || response.code == 201) {
-                    val publicUrl = "${SupabaseSyncManager.SUPABASE_URL}/storage/v1/object/public/${SupabaseSyncManager.STORAGE_BUCKET}/$filename"
-                    Log.d(TAG, "Successfully uploaded image to Supabase Storage: $publicUrl")
-                    return@withContext publicUrl
-                } else {
-                    Log.d(TAG, "Supabase Storage upload returned code ${response.code}")
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Supabase Storage upload fallback check", e)
-        }
-
-        // Try uploading to Firebase Storage second
+        // Try uploading to Firebase Storage first
         try {
             val filename = "proofs/${UUID.randomUUID()}.jpg"
             val ref = storage.reference.child(filename)
@@ -388,7 +360,7 @@ class FirebaseSyncManager {
                 }
 
                 val outputStream = java.io.ByteArrayOutputStream()
-                scaledBitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 70, outputStream)
+                scaledBitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 85, outputStream)
                 val compressedArray = outputStream.toByteArray()
                 val base64 = android.util.Base64.encodeToString(compressedArray, android.util.Base64.NO_WRAP)
                 "data:image/jpeg;base64,$base64"

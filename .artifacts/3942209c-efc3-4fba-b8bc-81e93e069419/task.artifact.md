@@ -1,0 +1,5 @@
+- [x] Fix overlap in `ReportsScreen.kt` summary banner
+- [x] Fix overlap in `TransactionCardItem.kt` header
+- [x] Improve column layout and font sizing in `ReportSharingUtils.kt` (PDF)
+- [x] Improve column layout and font sizing in `ReportSharingUtils.kt` (Image)
+- [ ] Verify UI and exports for any remaining overlaps

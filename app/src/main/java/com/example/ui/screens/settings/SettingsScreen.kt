@@ -34,7 +34,7 @@ import com.example.ui.viewmodel.User
 fun SettingsScreen(
     currentUser: User?,
     syncStatus: SyncStatus,
-    onSyncToSupabase: () -> Unit,
+    onSyncNow: () -> Unit,
     onExportData: () -> Unit,
     onImportData: () -> Unit,
     onLogout: () -> Unit,
@@ -56,12 +56,12 @@ fun SettingsScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(20.dp),
+                    .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
                     modifier = Modifier
-                        .size(54.dp)
+                        .size(48.dp)
                         .clip(CircleShape)
                         .background(SilverPrimary),
                     contentAlignment = Alignment.Center
@@ -70,7 +70,7 @@ fun SettingsScreen(
                         imageVector = Icons.Default.Person,
                         contentDescription = null,
                         tint = Color.White,
-                        modifier = Modifier.size(30.dp)
+                        modifier = Modifier.size(26.dp)
                     )
                 }
 
@@ -112,7 +112,7 @@ fun SettingsScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(18.dp)
+                    .padding(14.dp)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -121,16 +121,17 @@ fun SettingsScreen(
                     Icon(
                         imageVector = Icons.Default.CloudDone,
                         contentDescription = null,
-                        tint = ReturnGreen
+                        tint = ReturnGreen,
+                        modifier = Modifier.size(20.dp)
                     )
                     Text(
-                        text = "Firebase Firestore Real-Time DB",
-                        style = MaterialTheme.typography.titleMedium,
+                        text = "Cloud Sync (Firebase)",
+                        style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Surface(
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
@@ -139,43 +140,39 @@ fun SettingsScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                            .padding(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
                         Text(
-                            text = "Project ID: kkysilversalem",
-                            style = MaterialTheme.typography.bodySmall,
-                            fontSize = 12.sp,
+                            text = "ID: kkysilversalem",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontSize = 11.sp,
                             color = Color.DarkGray
                         )
                         Text(
-                            text = "Collections: shops, products, transactions",
-                            style = MaterialTheme.typography.bodySmall,
+                            text = "shops, products, transactions",
+                            style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.SemiBold,
-                            fontSize = 12.sp,
+                            fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            text = "Storage Bucket: kkysilversalem.firebasestorage.app",
-                            style = MaterialTheme.typography.bodySmall,
-                            fontSize = 12.sp,
-                            color = Color.DarkGray
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 Button(
-                    onClick = onSyncToSupabase,
+                    onClick = onSyncNow,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = ReturnGreen)
+                    colors = ButtonDefaults.buttonColors(containerColor = ReturnGreen),
+                    contentPadding = PaddingValues(vertical = 8.dp)
                 ) {
-                    Icon(imageVector = Icons.Default.Cloud, contentDescription = null)
+                    Icon(imageVector = Icons.Default.Cloud, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = if (syncStatus is SyncStatus.Syncing) "Syncing to Firebase..." else "Sync Local Data to Firebase Now"
+                        text = if (syncStatus is SyncStatus.Syncing) "Syncing..." else "Sync Local Data Now",
+                        style = MaterialTheme.typography.labelMedium
                     )
                 }
             }

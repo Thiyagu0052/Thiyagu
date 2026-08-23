@@ -6,13 +6,13 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TransactionDao {
-    @Query("SELECT * FROM transactions ORDER BY createdAt DESC")
+    @Query("SELECT * FROM transactions ORDER BY createdAt ASC")
     fun getAllTransactions(): Flow<List<Transaction>>
 
-    @Query("SELECT * FROM transactions WHERE shopId = :shopId ORDER BY createdAt DESC")
+    @Query("SELECT * FROM transactions WHERE shopId = :shopId ORDER BY createdAt ASC")
     fun getTransactionsByShop(shopId: Long): Flow<List<Transaction>>
 
-    @Query("SELECT * FROM transactions WHERE date = :date ORDER BY createdAt DESC")
+    @Query("SELECT * FROM transactions WHERE date = :date ORDER BY createdAt ASC")
     fun getTransactionsByDate(date: String): Flow<List<Transaction>>
 
     @Query("SELECT * FROM transactions WHERE id = :id LIMIT 1")

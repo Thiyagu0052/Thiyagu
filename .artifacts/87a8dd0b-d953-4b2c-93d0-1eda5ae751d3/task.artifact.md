@@ -1,0 +1,5 @@
+- [ ] Add WorkManager dependency in `libs.versions.toml` and `build.gradle.kts`
+- [ ] Create `BackupWorker.kt` for data export logic
+- [ ] Create `BackupScheduler.kt` to manage daily scheduling
+- [ ] Initialize scheduler in `MainActivity.kt`
+- [ ] Verify backup file generation

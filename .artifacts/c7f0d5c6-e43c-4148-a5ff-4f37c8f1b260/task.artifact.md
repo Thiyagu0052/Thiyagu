@@ -1,0 +1,8 @@
+- `[x]` Refine Header and Footer Layout
+    - `[x]` Restore standard heights in `AppNavHost.kt`
+    - `[x]` Adjust `NavigationBarItem` for better readability
+    - `[x]` Slightly increase padding in Dashboard header
+- `[x]` Verify changes
+    - `[x]` Build and run the app
+    - `[x]` Verify no truncation in header
+    - `[x]` Verify footer spacing

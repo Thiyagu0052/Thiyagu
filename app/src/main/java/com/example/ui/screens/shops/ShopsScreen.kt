@@ -185,7 +185,7 @@ fun ShopCardItem(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(12.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -233,7 +233,7 @@ fun ShopCardItem(
 
             Text(
                 text = "உரிமையாளர்: ${shop.ownerName}",
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.labelMedium,
                 color = Color.DarkGray
             )
 
@@ -242,12 +242,12 @@ fun ShopCardItem(
                     imageVector = Icons.Default.Phone,
                     contentDescription = null,
                     tint = Color.Gray,
-                    modifier = Modifier.size(14.dp)
+                    modifier = Modifier.size(12.dp)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
                     text = shop.phone,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.labelSmall,
                     color = Color.Gray
                 )
             }
@@ -260,7 +260,7 @@ fun ShopCardItem(
                 )
             }
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
 
             // Pure Weight Balance Row
             Row(
@@ -277,9 +277,9 @@ fun ShopCardItem(
                     Text("$returnWeight g", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = ReturnGreen)
                 }
 
-                Column {
-                    Text("தற்போதய இருப்பு கடையில்", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                    Text("$hold g", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.ExtraBold, color = HoldAmber)
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("தற்போதைய இருப்பு", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    Text("$hold g", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Black, color = HoldAmber)
                 }
             }
         }
@@ -344,7 +344,10 @@ fun ShopDetailScreen(
     modifier: Modifier = Modifier
 ) {
     val shop = remember(shops, shopId) { shops.find { it.id == shopId } }
-    val shopTxs = remember(transactions, shopId) { transactions.filter { it.shopId == shopId } }
+    val shopTxs = remember(transactions, shopId) { 
+        transactions.filter { it.shopId == shopId }
+            .sortedWith(compareBy<Transaction> { it.date }.thenBy { it.time })
+    }
 
     var showEditShopDialog by remember { mutableStateOf(false) }
     var showAddTxDialog by remember { mutableStateOf(false) }
@@ -420,25 +423,29 @@ fun ShopDetailScreen(
 
                     HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceAround
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("மொத்த கொடுத்தல்", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
-                            Text("$roundedDel g", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = DeliveryBlue)
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text("கொடுத்தல்", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                            Text("$roundedDel g", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = DeliveryBlue)
                         }
 
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("மொத்த வரவு", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
-                            Text("$roundedRet g", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = ReturnGreen)
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text("வரவு", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                            Text("$roundedRet g", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = ReturnGreen)
                         }
 
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("தற்போதைய இருப்பு", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
-                            Text("$hold g", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = HoldAmber)
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text("இருப்பு", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                            Text("$hold g", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black, color = HoldAmber)
                         }
-                    }
                 }
             }
 

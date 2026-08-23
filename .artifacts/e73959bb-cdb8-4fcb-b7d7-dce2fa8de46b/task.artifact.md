@@ -1,0 +1,5 @@
+- `[x]` Remove Supabase logic from `FirebaseSyncManager.kt`
+- `[x]` Rename and update `SupabaseSyncBar.kt` to `FirebaseSyncBar.kt` (or update in place)
+- `[x]` Update `AppNavHost.kt` imports and usages
+- `[x]` Update `SettingsScreen.kt` parameters and labels
+- `[x]` Verify build and functionality

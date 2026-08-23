@@ -9,6 +9,7 @@ import android.util.Base64
 import androidx.core.content.FileProvider
 import com.example.data.model.Transaction
 import com.example.data.model.TransactionType
+import com.example.data.model.TransactionWithBalance
 import java.io.File
 import java.io.FileOutputStream
 
@@ -16,34 +17,47 @@ object ReportSharingUtils {
 
     private const val AUTHORITY = "com.kkySilver.erp.fileprovider"
 
+    private fun getReportLabel(txType: String): String {
+        val type = TransactionType.fromLabel(txType)
+        return when (type) {
+            TransactionType.DELIVERY -> "ஜதை கொடுத்தல்"
+            TransactionType.RETURN_KACHA -> "வெள்ளி வரவு"
+            else -> type.displayLabel
+        }
+    }
+
     fun shareTextReport(
         ctx: Context,
         shopName: String,
-        transactions: List<Transaction>,
+        items: List<TransactionWithBalance>,
         delivery: Double,
         returns: Double,
         hold: Double,
         dateRange: String
     ) {
+        val sortedItems = items.sortedWith(compareBy({ it.tx.date }, { it.tx.time }))
         val sb = StringBuilder()
         sb.append("--- KKY SILVERS ---\n")
         sb.append("கடை: $shopName\n")
-        sb.append("காலம்: $dateRange\n")
+        if (dateRange != "முழு விவரம்") {
+            sb.append("காலம்: $dateRange\n")
+        }
         sb.append("------------------------------------------\n")
-        sb.append(String.format("%-20s: %10.1f g\n", "மொத்த கொடுத்தல்", delivery))
-        sb.append(String.format("%-20s: %10.1f g\n", "மொத்த வரவு", returns))
+        sb.append(String.format("%-20s: %10.1f g\n", "மொத்த ஜதை கொடுத்தல்", delivery))
+        sb.append(String.format("%-20s: %10.1f g\n", "மொத்த வெள்ளி வரவு", returns))
         sb.append(String.format("%-20s: %10.1f g\n", "தற்போதைய இருப்பு", hold))
         sb.append("------------------------------------------\n\n")
 
-        if (transactions.isNotEmpty()) {
+        if (sortedItems.isNotEmpty()) {
             sb.append("பரிவர்த்தனை விவரங்கள்:\n")
             sb.append("```\n")
-            sb.append(String.format("%-16s | %-8s | %-10s\n", "தேதி & நேரம்", "வகை", "Pure(g)"))
-            sb.append("-----------------|----------|-----------\n")
-            transactions.forEach { tx ->
-                val type = TransactionType.fromLabel(tx.type).displayLabel
-                val dateTime = "${tx.date} ${tx.time}".trim()
-                sb.append(String.format("%-16s | %-8s | %10.1f\n", dateTime, type, tx.pureWeight))
+            sb.append(String.format("%-10s | %-8s | %-10s | %-10s\n", "தேதி", "வகை", "Pure(g)", "இருப்பு(g)"))
+            sb.append("-----------|----------|------------|-----------\n")
+            sortedItems.forEach { item ->
+                val tx = item.tx
+                val type = getReportLabel(tx.type)
+                val date = tx.date
+                sb.append(String.format("%-10s | %-8s | %10.1f | %10.1f\n", date, type, tx.pureWeight, item.balanceAtThisPoint))
             }
             sb.append("```\n")
         }
@@ -58,18 +72,18 @@ object ReportSharingUtils {
     fun shareImageReport(
         ctx: Context,
         shopName: String,
-        transactions: List<Transaction>,
+        items: List<TransactionWithBalance>,
         delivery: Double,
         returns: Double,
         hold: Double,
         dateRange: String
     ) {
-        val sortedTransactions = transactions // Already sorted in screen
-        val width = 800
+        val sortedItems = items.sortedWith(compareBy({ it.tx.date }, { it.tx.time }))
+        val width = 1000 // Increased width for extra column
         val rowHeight = 60
         val headerHeight = 280
         val footerHeight = 100
-        val totalHeight = headerHeight + (sortedTransactions.size * rowHeight) + footerHeight
+        val totalHeight = headerHeight + (sortedItems.size * rowHeight) + footerHeight
 
         val bitmap = Bitmap.createBitmap(width, totalHeight, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
@@ -90,7 +104,9 @@ object ReportSharingUtils {
         paint.textSize = 28f
         paint.isFakeBoldText = false
         canvas.drawText("கடை: $shopName", 40f, 120f, paint)
-        canvas.drawText("காலம்: $dateRange", 40f, 160f, paint)
+        if (dateRange != "முழு விவரம்") {
+            canvas.drawText("காலம்: $dateRange", 40f, 160f, paint)
+        }
 
         // Summary Boxes
         paint.color = Color.parseColor("#F5F5F5")
@@ -98,22 +114,23 @@ object ReportSharingUtils {
 
         paint.color = Color.BLACK
         paint.textSize = 24f
-        canvas.drawText("கொடுத்தல்: ${delivery}g", 40f, 270f, paint)
-        canvas.drawText("வரவு: ${returns}g", 290f, 270f, paint)
+        canvas.drawText("ஜதை கொடுத்தல்: ${delivery}g", 40f, 270f, paint)
+        canvas.drawText("வெள்ளி வரவு: ${returns}g", 400f, 270f, paint)
         paint.isFakeBoldText = true
         paint.color = Color.parseColor("#FF6F00") // HoldAmber
-        canvas.drawText("கடை இருப்பு: ${hold}g", 530f, 270f, paint)
+        canvas.drawText("கடை இருப்பு: ${hold}g", 740f, 270f, paint)
 
         // Table Header
         paint.color = Color.DKGRAY
         paint.textSize = 24f
         paint.isFakeBoldText = true
         val tableTop = 350f
-        canvas.drawText("தேதி & நேரம்", 40f, tableTop, paint)
-        canvas.drawText("வகை", 260f, tableTop, paint)
-        canvas.drawText("எடை(g)", 400f, tableTop, paint)
-        canvas.drawText("டச்", 580f, tableTop, paint)
-        canvas.drawText("Pure(g)", 700f, tableTop, paint)
+        canvas.drawText("தேதி", 40f, tableTop, paint)
+        canvas.drawText("வகை", 180f, tableTop, paint)
+        canvas.drawText("எடை(g)", 380f, tableTop, paint)
+        canvas.drawText("டச்", 540f, tableTop, paint)
+        canvas.drawText("Pure(g)", 680f, tableTop, paint)
+        canvas.drawText("இருப்பு(g)", 830f, tableTop, paint)
 
         canvas.drawLine(20f, tableTop + 10, width - 20f, tableTop + 10, paint)
 
@@ -121,12 +138,14 @@ object ReportSharingUtils {
         paint.isFakeBoldText = false
         paint.textSize = 20f
         var currentY = tableTop + 50f
-        sortedTransactions.forEach { tx ->
-            canvas.drawText("${tx.date} ${tx.time}".trim(), 40f, currentY, paint)
-            canvas.drawText(TransactionType.fromLabel(tx.type).displayLabel, 260f, currentY, paint)
-            canvas.drawText("${tx.weight}", 400f, currentY, paint)
-            canvas.drawText("${tx.touch}%", 580f, currentY, paint)
-            canvas.drawText("${tx.pureWeight}", 700f, currentY, paint)
+        sortedItems.forEach { item ->
+            val tx = item.tx
+            canvas.drawText(tx.date, 40f, currentY, paint)
+            canvas.drawText(getReportLabel(tx.type), 180f, currentY, paint)
+            canvas.drawText("${tx.weight}", 380f, currentY, paint)
+            canvas.drawText("${tx.touch}%", 540f, currentY, paint)
+            canvas.drawText("${tx.pureWeight}", 680f, currentY, paint)
+            canvas.drawText("${item.balanceAtThisPoint}", 830f, currentY, paint)
             currentY += rowHeight
         }
 
@@ -136,7 +155,7 @@ object ReportSharingUtils {
     fun sharePdfReport(
         ctx: Context,
         shopName: String,
-        transactions: List<Transaction>,
+        items: List<TransactionWithBalance>,
         delivery: Double,
         returns: Double,
         hold: Double,
@@ -146,7 +165,6 @@ object ReportSharingUtils {
         val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create() // A4
         var page = pdfDocument.startPage(pageInfo)
         var canvas = page.canvas
-        val paint = Paint()
 
         // Styles
         val titlePaint = Paint().apply {
@@ -155,17 +173,17 @@ object ReportSharingUtils {
             color = Color.BLACK
         }
         val textPaint = Paint().apply {
-            textSize = 9f
+            textSize = 8f // Reduced for extra columns
             color = Color.BLACK
         }
         val headerPaint = Paint().apply {
-            textSize = 9f
+            textSize = 8f
             isFakeBoldText = true
             color = Color.BLACK
         }
         val borderPaint = Paint().apply {
             style = Paint.Style.STROKE
-            strokeWidth = 1f
+            strokeWidth = 0.5f
             color = Color.LTGRAY
         }
 
@@ -173,42 +191,64 @@ object ReportSharingUtils {
         canvas.drawText("KKY SILVERS STATEMENT", 200f, y, titlePaint)
         y += 25f
         canvas.drawText("Shop: $shopName", 50f, y, textPaint)
+        if (dateRange != "முழு விவரம்") {
+            y += 15f
+            canvas.drawText("Period: $dateRange", 50f, y, textPaint)
+        }
         y += 15f
-        canvas.drawText("Period: $dateRange", 50f, y, textPaint)
-        y += 15f
-        canvas.drawText("Summary: Delivery: ${delivery}g | Return: ${returns}g | HOLD: ${hold}g", 50f, y, headerPaint)
+        canvas.drawText("Summary: Jathai Delivery: ${delivery}g | Silver Return: ${returns}g | HOLD: ${hold}g", 50f, y, headerPaint)
         y += 40f
 
         // Table Constants
-        val colDate = 50f
-        val colType = 135f
-        val colWeight = 200f
-        val colTouch = 260f
-        val colPure = 320f
-        val colRemarks = 380f
+        val startX = 40f
+        val endX = 555f
+        val colDate = 40f
+        val colType = 95f
+        val colWeight = 185f
+        val colTouch = 245f
+        val colPure = 295f
+        val colBalance = 355f
+        val colRemarks = 425f
+
+        fun drawCellText(text: String, startX: Float, nextStartX: Float, currentY: Float, paint: Paint, align: Paint.Align = Paint.Align.LEFT) {
+            val width = nextStartX - startX
+            val textWidth = paint.measureText(text)
+            val x = when (align) {
+                Paint.Align.CENTER -> startX + (width - textWidth) / 2f
+                Paint.Align.RIGHT -> nextStartX - textWidth - 5f
+                else -> startX + 5f
+            }
+            canvas.drawText(text, x, currentY, paint)
+        }
 
         fun drawHeaderRow(currentY: Float) {
-            canvas.drawRect(50f, currentY - 15, 550f, currentY + 5, Paint().apply { color = Color.parseColor("#EEEEEE") })
-            canvas.drawText("Date & Time", colDate + 5, currentY, headerPaint)
-            canvas.drawText("Type", colType + 5, currentY, headerPaint)
-            canvas.drawText("Weight", colWeight + 5, currentY, headerPaint)
-            canvas.drawText("Touch", colTouch + 5, currentY, headerPaint)
-            canvas.drawText("Pure(g)", colPure + 5, currentY, headerPaint)
-            canvas.drawText("Remarks & Images", colRemarks + 5, currentY, headerPaint)
+            canvas.drawRect(startX, currentY - 15, endX, currentY + 5, Paint().apply { color = Color.parseColor("#EEEEEE") })
+            drawCellText("Date", colDate, colType, currentY, headerPaint, Paint.Align.CENTER)
+            drawCellText("Type", colType, colWeight, currentY, headerPaint, Paint.Align.CENTER)
+            drawCellText("Weight", colWeight, colTouch, currentY, headerPaint, Paint.Align.CENTER)
+            drawCellText("Touch", colTouch, colPure, currentY, headerPaint, Paint.Align.CENTER)
+            drawCellText("Pure(g)", colPure, colBalance, currentY, headerPaint, Paint.Align.CENTER)
+            drawCellText("Balance(g)", colBalance, colRemarks, currentY, headerPaint, Paint.Align.CENTER)
+            drawCellText("Remarks & Images", colRemarks, endX, currentY, headerPaint, Paint.Align.LEFT)
             
             // Draw border for header
-            canvas.drawRect(50f, currentY - 15, 550f, currentY + 5, borderPaint)
+            canvas.drawRect(startX, currentY - 15, endX, currentY + 5, borderPaint)
         }
 
         drawHeaderRow(y)
         y += 5f // Move to bottom of header row start
 
-        val sortedTransactions = transactions // Already sorted in screen
+        val sortedItems = items.sortedWith(compareBy({ it.tx.date }, { it.tx.time }))
 
-        sortedTransactions.forEach { tx ->
+        sortedItems.forEach { item ->
+            val tx = item.tx
             val imageUris = ImageUtils.parseImageUris(tx.imageUri)
-            val hasImage = imageUris.isNotEmpty()
-            val rowHeight = if (hasImage) 220f else 30f
+            val imageCount = imageUris.size
+            val imagePadding = 10f
+            val imageDrawHeight = 160f
+            val rowHeight = if (imageCount > 0) {
+                30f + (imageCount * (imageDrawHeight + imagePadding))
+            } else 30f
 
             if (y + rowHeight > 800) {
                 pdfDocument.finishPage(page)
@@ -220,44 +260,66 @@ object ReportSharingUtils {
             }
 
             val startY = y
-            val endY = startY + rowHeight
+            val nextY = startY + rowHeight
 
-            // Draw content
-            canvas.drawText("${tx.date} ${tx.time}".trim(), colDate + 5, startY + 20, textPaint)
-            canvas.drawText(TransactionType.fromLabel(tx.type).displayLabel, colType + 5, startY + 20, textPaint)
-            canvas.drawText("${tx.weight}g", colWeight + 5, startY + 20, textPaint)
-            canvas.drawText("${tx.touch}%", colTouch + 5, startY + 20, textPaint)
-            canvas.drawText("${tx.pureWeight}g", colPure + 5, startY + 20, textPaint)
+            // Draw text content with improved alignment
+            drawCellText(tx.date, colDate, colType, startY + 20, textPaint, Paint.Align.CENTER)
+            drawCellText(getReportLabel(tx.type), colType, colWeight, startY + 20, textPaint, Paint.Align.CENTER)
+            drawCellText("${tx.weight}g", colWeight, colTouch, startY + 20, textPaint, Paint.Align.RIGHT)
+            drawCellText("${tx.touch}%", colTouch, colPure, startY + 20, textPaint, Paint.Align.RIGHT)
+            drawCellText("${tx.pureWeight}g", colPure, colBalance, startY + 20, textPaint, Paint.Align.RIGHT)
+            drawCellText("${item.balanceAtThisPoint}g", colBalance, colRemarks, startY + 20, textPaint, Paint.Align.RIGHT)
             
             val remarks = if (tx.remarks.length > 25) tx.remarks.take(22) + "..." else tx.remarks
-            canvas.drawText(remarks, colRemarks + 5, startY + 20, textPaint)
+            drawCellText(remarks, colRemarks, endX, startY + 20, textPaint, Paint.Align.LEFT)
 
-            if (hasImage) {
-                try {
-                    val uriStr = imageUris[0]
-                    val bitmap = if (uriStr.startsWith("data:image/")) {
-                        val base64Data = uriStr.substringAfter("base64,")
-                        val bytes = Base64.decode(base64Data, Base64.DEFAULT)
-                        BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                    } else null
+            // Draw Images
+            if (imageCount > 0) {
+                var imgY = startY + 35f
+                val imagePaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+                val maxImgWidth = endX - colRemarks - 10f
+                
+                imageUris.forEach { uriStr ->
+                    try {
+                        var bitmap: Bitmap? = null
+                        if (uriStr.startsWith("data:image/")) {
+                            val base64Data = uriStr.substringAfter("base64,")
+                            val bytes = Base64.decode(base64Data, Base64.DEFAULT)
+                            bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                        } else if (uriStr.startsWith("content://") || uriStr.startsWith("file://")) {
+                            val inputStream = ctx.contentResolver.openInputStream(Uri.parse(uriStr))
+                            bitmap = BitmapFactory.decodeStream(inputStream)
+                            inputStream?.close()
+                        }
 
-                    bitmap?.let {
-                        val scaled = Bitmap.createScaledBitmap(it, 180, 180, true)
-                        canvas.drawBitmap(scaled, colRemarks + 5, startY + 30, paint)
+                        bitmap?.let {
+                            val scale = Math.min(maxImgWidth / it.width, imageDrawHeight / it.height)
+                            val drawWidth = it.width * scale
+                            val drawHeight = it.height * scale
+                            
+                            val left = colRemarks + 5f + (maxImgWidth - drawWidth) / 2f
+                            val finalDestRect = RectF(left, imgY, left + drawWidth, imgY + drawHeight)
+                            
+                            canvas.drawBitmap(it, null, finalDestRect, imagePaint)
+                            imgY += drawHeight + imagePadding
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
                     }
-                } catch (e: Exception) {}
+                }
             }
 
             // Draw Row Borders
-            canvas.drawRect(50f, startY, 550f, endY, borderPaint)
+            canvas.drawRect(startX, startY, endX, nextY, borderPaint)
             // Vertical separators
-            canvas.drawLine(colType, startY, colType, endY, borderPaint)
-            canvas.drawLine(colWeight, startY, colWeight, endY, borderPaint)
-            canvas.drawLine(colTouch, startY, colTouch, endY, borderPaint)
-            canvas.drawLine(colPure, startY, colPure, endY, borderPaint)
-            canvas.drawLine(colRemarks, startY, colRemarks, endY, borderPaint)
+            canvas.drawLine(colType, startY, colType, nextY, borderPaint)
+            canvas.drawLine(colWeight, startY, colWeight, nextY, borderPaint)
+            canvas.drawLine(colTouch, startY, colTouch, nextY, borderPaint)
+            canvas.drawLine(colPure, startY, colPure, nextY, borderPaint)
+            canvas.drawLine(colBalance, startY, colBalance, nextY, borderPaint)
+            canvas.drawLine(colRemarks, startY, colRemarks, nextY, borderPaint)
 
-            y = endY
+            y = nextY
         }
 
         pdfDocument.finishPage(page)

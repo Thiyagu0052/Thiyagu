@@ -18,12 +18,14 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.data.model.Transaction
 import com.example.data.model.TransactionType
 import com.example.util.ImageUtils
 import com.example.ui.theme.DeliveryBlue
+import com.example.ui.theme.HoldAmber
 import com.example.ui.theme.ReturnGreen
 
 @Composable
@@ -32,7 +34,10 @@ fun TransactionCardItem(
     modifier: Modifier = Modifier,
     index: Int? = null,
     onEdit: (() -> Unit)? = null,
-    onDelete: (() -> Unit)? = null
+    onDelete: (() -> Unit)? = null,
+    showTime: Boolean = true,
+    balance: Double? = null,
+    isReport: Boolean = false
 ) {
     var showConfirmDelete by remember { mutableStateOf(false) }
     var showImagePreview by remember { mutableStateOf(false) }
@@ -53,14 +58,17 @@ fun TransactionCardItem(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp)
+                .padding(10.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     if (index != null) {
                         Text(
                             text = "$index.",
@@ -77,28 +85,56 @@ fun TransactionCardItem(
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
                         val typeEnumDisplay = TransactionType.fromLabel(tx.type)
+                        val displayLabel = if (isReport) {
+                            when (typeEnumDisplay) {
+                                TransactionType.DELIVERY -> "ஜதை கொடுத்தல்"
+                                TransactionType.RETURN_KACHA -> "வெள்ளி வரவு"
+                                else -> typeEnumDisplay.displayLabel
+                            }
+                        } else {
+                            typeEnumDisplay.displayLabel
+                        }
+                        
                         Text(
-                            text = typeEnumDisplay.displayLabel,
+                            text = displayLabel,
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
                             color = badgeColor
                         )
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    
+                    val timeString = if (tx.timeAmPm.isNotBlank()) tx.timeAmPm else tx.time
+                    val displayText = if (showTime) "${tx.date} $timeString".trim() else tx.date
+                    
                     Text(
-                        text = "${tx.date} ${tx.time}".trim(),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.Gray
+                        text = displayText,
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                        color = Color.Gray,
+                        maxLines = 1
                     )
                 }
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "${tx.pureWeight} g Pure",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = badgeColor
-                    )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(start = 4.dp)
+                ) {
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            text = "${tx.pureWeight} g Pure",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = badgeColor
+                        )
+                        if (balance != null) {
+                            Text(
+                                text = "$balance g இருப்பு",
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                fontWeight = FontWeight.ExtraBold,
+                                color = HoldAmber
+                            )
+                        }
+                    }
 
                     if (onEdit != null || onDelete != null) {
                         Spacer(modifier = Modifier.width(4.dp))
@@ -137,18 +173,19 @@ fun TransactionCardItem(
             Text(
                 text = tx.shopName,
                 style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Black,
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 4.dp),
+                    .padding(top = 1.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "மொத்தம்: ${tx.weight} g | டச்: ${tx.touch}%" + if (tx.touchAdjustment != 0.0) " (+${tx.touchAdjustment}%)" else "",
-                    style = MaterialTheme.typography.titleMedium,
+                    text = "${tx.weight} g | ${tx.touch}%" + if (tx.touchAdjustment != 0.0) " (+${tx.touchAdjustment}%)" else "",
+                    style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     color = Color.DarkGray
                 )
@@ -168,23 +205,23 @@ fun TransactionCardItem(
             }
 
             if (imageList.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(RoundedCornerShape(6.dp))
                         .clickable { showImagePreview = true }
-                        .padding(vertical = 2.dp, horizontal = 4.dp)
+                        .padding(vertical = 1.dp, horizontal = 2.dp)
                 ) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                         imageList.take(3).forEach { imgUri ->
                             val imageModel: Any = remember(imgUri) {
                                 ImageUtils.getImageModel(imgUri)
                             }
                             Box(
                                 modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(RoundedCornerShape(6.dp))
+                                    .size(28.dp)
+                                    .clip(RoundedCornerShape(4.dp))
                                     .background(Color.LightGray)
                             ) {
                                 AsyncImage(
@@ -237,7 +274,7 @@ fun TransactionCardItem(
         if (imageList.isNotEmpty()) {
             ImagePreviewDialog(
                 imageUris = imageList,
-                title = "Proof Images - ${tx.shopName} (${tx.date} ${tx.time})",
+                title = "Proof Images - ${tx.shopName} (${tx.date} ${if (tx.timeAmPm.isNotBlank()) tx.timeAmPm else tx.time})",
                 onDismiss = { showImagePreview = false }
             )
         }

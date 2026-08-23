@@ -15,6 +15,7 @@ import com.example.data.model.Transaction
 import com.example.data.repository.SilverRepository
 import com.example.data.remote.FirebaseSyncManager
 import com.example.data.remote.SyncStatus
+import com.example.util.DateUtils
 import com.example.util.ImageUtils
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -139,7 +140,8 @@ class SilverViewModel(application: Application) : AndroidViewModel(application) 
                 phone = phone.trim(),
                 address = address.trim(),
                 gstNumber = gstNumber.trim(),
-                notes = notes.trim()
+                notes = notes.trim(),
+                isoTimestamp = DateUtils.getCurrentIsoTimestamp()
             )
             val newId = repository.insertShop(shop)
             val insertedShop = shop.copy(id = newId)
@@ -191,7 +193,8 @@ class SilverViewModel(application: Application) : AndroidViewModel(application) 
                     productName = name,
                     category = category.trim(),
                     defaultWeight = defaultWeight,
-                    imageUri = uploadedImageUri
+                    imageUri = uploadedImageUri,
+                    isoTimestamp = DateUtils.getCurrentIsoTimestamp()
                 )
                 val newId = repository.insertProduct(product)
                 firebaseSyncManager.syncProduct(product.copy(id = newId))
@@ -234,6 +237,7 @@ class SilverViewModel(application: Application) : AndroidViewModel(application) 
             val tx = Transaction(
                 date = date,
                 time = time,
+                timeAmPm = DateUtils.formatToAmPm(time),
                 shopId = shopId,
                 shopName = shopName,
                 type = type,
@@ -242,7 +246,8 @@ class SilverViewModel(application: Application) : AndroidViewModel(application) 
                 touchAdjustment = touchAdjustment,
                 pureWeight = pureWeight,
                 remarks = remarks.trim(),
-                imageUri = hostedImageUri
+                imageUri = hostedImageUri,
+                isoTimestamp = DateUtils.getCurrentIsoTimestamp()
             )
             val newId = repository.insertTransaction(tx)
             firebaseSyncManager.syncTransaction(tx.copy(id = newId))
@@ -269,6 +274,7 @@ class SilverViewModel(application: Application) : AndroidViewModel(application) 
                 id = id,
                 date = date,
                 time = time,
+                timeAmPm = DateUtils.formatToAmPm(time),
                 shopId = shopId,
                 shopName = shopName,
                 type = type,
@@ -277,7 +283,8 @@ class SilverViewModel(application: Application) : AndroidViewModel(application) 
                 touchAdjustment = touchAdjustment,
                 pureWeight = pureWeight,
                 remarks = remarks.trim(),
-                imageUri = hostedImageUri
+                imageUri = hostedImageUri,
+                isoTimestamp = DateUtils.getCurrentIsoTimestamp()
             )
             repository.updateTransaction(tx)
             firebaseSyncManager.syncTransaction(tx)

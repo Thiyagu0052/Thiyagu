@@ -24,7 +24,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.ui.components.SupabaseSyncBar
 import com.example.ui.screens.dashboard.DashboardScreen
 import com.example.ui.screens.login.LoginScreen
 import com.example.ui.screens.products.ProductsScreen
@@ -43,12 +42,12 @@ data class BottomNavItem(
 )
 
 val bottomNavItems = listOf(
-    BottomNavItem(Screen.Dashboard.route, "டாஷ்போர்டு", Icons.Default.Dashboard),
+    BottomNavItem(Screen.Dashboard.route, "முகப்பு", Icons.Default.Dashboard),
     BottomNavItem(Screen.Shops.route, "கடைகள்", Icons.Default.Store),
-    BottomNavItem(Screen.Products.route, "தயாரிப்புகள்", Icons.Default.Category),
+    BottomNavItem(Screen.Products.route, "பொருட்கள்", Icons.Default.Category),
     BottomNavItem(Screen.Transactions.route, "லெட்ஜர்", Icons.AutoMirrored.Filled.ReceiptLong),
-    BottomNavItem(Screen.Reports.route, "அறிக்கைகள்", Icons.Default.Assessment),
-    BottomNavItem(Screen.Settings.route, "அமைப்புகள்", Icons.Default.Settings)
+    BottomNavItem(Screen.Reports.route, "அறிக்கை", Icons.Default.Assessment),
+    BottomNavItem(Screen.Settings.route, "அமைப்பு", Icons.Default.Settings)
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -104,35 +103,32 @@ fun MainAppStructure(
     Scaffold(
         topBar = {
             if (showBottomBar) {
-                Column {
-                    TopAppBar(
-                        title = {
-                            Text(
-                                text = "KKY SILVERS",
-                                fontWeight = FontWeight.ExtraBold,
-                                style = MaterialTheme.typography.headlineSmall
-                            )
-                        },
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.surface
+                CenterAlignedTopAppBar(
+                    title = {
+                        Text(
+                            text = "KKY SILVERS",
+                            fontWeight = FontWeight.Black,
+                            style = MaterialTheme.typography.titleMedium
                         )
+                    },
+                    modifier = Modifier.height(56.dp),
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface
                     )
-                    SupabaseSyncBar(
-                        syncStatus = syncStatus,
-                        onSyncNow = { silverViewModel.syncToFirebase() }
-                    )
-                }
+                )
             }
         },
         bottomBar = {
             if (showBottomBar) {
                 NavigationBar(
+                    modifier = Modifier.height(80.dp),
                     windowInsets = WindowInsets.navigationBars
                 ) {
                     bottomNavItems.forEach { item ->
                         val selected = currentRoute == item.route
                         NavigationBarItem(
                             selected = selected,
+                            alwaysShowLabel = true,
                             onClick = {
                                 navController.navigate(item.route) {
                                     popUpTo(navController.graph.findStartDestination().id) {
@@ -142,8 +138,14 @@ fun MainAppStructure(
                                     restoreState = true
                                 }
                             },
-                            icon = { Icon(imageVector = item.icon, contentDescription = item.title) },
-                            label = { Text(item.title) }
+                            icon = { Icon(imageVector = item.icon, contentDescription = item.title, modifier = Modifier.size(22.dp)) },
+                            label = { 
+                                Text(
+                                    text = item.title,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    maxLines = 1
+                                ) 
+                            }
                         )
                     }
                 }
@@ -262,7 +264,7 @@ fun MainAppStructure(
                 SettingsScreen(
                     currentUser = currentUser,
                     syncStatus = syncStatus,
-                    onSyncToSupabase = { silverViewModel.syncToFirebase() },
+                    onSyncNow = { silverViewModel.syncToFirebase() },
                     onExportData = { exportLauncher.launch("silver_erp_backup.json") },
                     onImportData = { importLauncher.launch(arrayOf("application/json")) },
                     onLogout = {

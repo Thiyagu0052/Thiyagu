@@ -187,7 +187,8 @@ class SilverRepository(
                             address = payload.optString("address"),
                             gstNumber = payload.optString("gstNumber"),
                             notes = payload.optString("notes"),
-                            createdAt = payload.optLong("createdAt", System.currentTimeMillis())
+                            createdAt = payload.optLong("createdAt", System.currentTimeMillis()),
+                            isoTimestamp = payload.optString("isoTimestamp", "")
                         )
                         shopDao.insertShop(shop)
                     }
@@ -202,7 +203,8 @@ class SilverRepository(
                             category = payload.optString("category"),
                             defaultWeight = payload.optDouble("defaultWeight", 0.0),
                             imageUri = payload.optString("imageUri", ""),
-                            createdAt = payload.optLong("createdAt", System.currentTimeMillis())
+                            createdAt = payload.optLong("createdAt", System.currentTimeMillis()),
+                            isoTimestamp = payload.optString("isoTimestamp", "")
                         )
                         productDao.insertProduct(product)
                     }
@@ -214,6 +216,8 @@ class SilverRepository(
                         val tx = Transaction(
                             id = id,
                             date = date,
+                            time = payload.optString("time", ""),
+                            timeAmPm = payload.optString("timeAmPm", ""),
                             shopId = payload.optLong("shopId"),
                             shopName = payload.optString("shopName"),
                             type = payload.optString("type"),
@@ -223,7 +227,8 @@ class SilverRepository(
                             pureWeight = payload.optDouble("pureWeight", 0.0),
                             remarks = payload.optString("remarks"),
                             imageUri = payload.optString("imageUri"),
-                            createdAt = payload.optLong("createdAt", System.currentTimeMillis())
+                            createdAt = payload.optLong("createdAt", System.currentTimeMillis()),
+                            isoTimestamp = payload.optString("isoTimestamp", "")
                         )
                         transactionDao.insertTransaction(tx)
                     }

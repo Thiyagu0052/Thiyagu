@@ -75,7 +75,7 @@ fun TransactionsScreen(
             val matchesType = selectedTypeFilter == null || tx.type.equals(selectedTypeFilter, ignoreCase = true)
             val matchesShop = selectedShopFilterId == null || tx.shopId == selectedShopFilterId
             matchesQuery && matchesType && matchesShop
-        }.sortedWith(compareBy({ it.date }, { it.time }))
+        }.sortedWith(compareBy<Transaction> { it.date }.thenBy { it.time })
     }
 
     Box(modifier = modifier.fillMaxSize()) {

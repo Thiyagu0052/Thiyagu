@@ -39,6 +39,7 @@ import com.example.data.model.Shop
 import com.example.data.model.TransactionType
 import com.example.util.ImageUtils
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -71,6 +72,23 @@ fun TransactionDialog(
 
     var dateText by remember { mutableStateOf(existingTransaction?.date ?: todayDate) }
     var timeText by remember { mutableStateOf(existingTransaction?.time ?: currentTime) }
+
+    var showDatePicker by remember { mutableStateOf(false) }
+    var showTimePicker by remember { mutableStateOf(false) }
+
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = try {
+            SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(dateText)?.time
+        } catch (e: Exception) {
+            System.currentTimeMillis()
+        }
+    )
+
+    val timePickerState = rememberTimePickerState(
+        initialHour = try { timeText.split(":")[0].toInt() } catch (e: Exception) { 12 },
+        initialMinute = try { timeText.split(":")[1].toInt() } catch (e: Exception) { 0 }
+    )
+
     var selectedShop by remember {
         mutableStateOf(
             if (existingTransaction != null) {
@@ -173,23 +191,95 @@ fun TransactionDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    OutlinedTextField(
-                        value = dateText,
-                        onValueChange = { dateText = it },
-                        label = { Text("தேதி (YYYY-MM-DD)") },
-                        modifier = Modifier.weight(1.2f),
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp)
-                    )
+                    Box(modifier = Modifier.weight(1.2f)) {
+                        OutlinedTextField(
+                            value = dateText,
+                            onValueChange = { },
+                            label = { Text("தேதி (YYYY-MM-DD)") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            readOnly = true,
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        // Invisible click layer
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .clickable { showDatePicker = true }
+                        )
+                    }
 
-                    OutlinedTextField(
-                        value = timeText,
-                        onValueChange = { timeText = it },
-                        label = { Text("நேரம் (HH:mm)") },
-                        modifier = Modifier.weight(0.8f),
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp)
-                    )
+                    Box(modifier = Modifier.weight(0.8f)) {
+                        OutlinedTextField(
+                            value = timeText,
+                            onValueChange = { },
+                            label = { Text("நேரம் (HH:mm)") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            readOnly = true,
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        // Invisible click layer
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .clickable { showTimePicker = true }
+                        )
+                    }
+                }
+
+                if (showDatePicker) {
+                    DatePickerDialog(
+                        onDismissRequest = { showDatePicker = false },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                val selectedDate = datePickerState.selectedDateMillis
+                                if (selectedDate != null) {
+                                    val cal = Calendar.getInstance()
+                                    cal.timeInMillis = selectedDate
+                                    dateText = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(cal.time)
+                                }
+                                showDatePicker = false
+                            }) { Text("சரி") }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showDatePicker = false }) { Text("ரத்து செய்") }
+                        }
+                    ) {
+                        DatePicker(state = datePickerState)
+                    }
+                }
+
+                if (showTimePicker) {
+                    Dialog(onDismissRequest = { showTimePicker = false }) {
+                        Surface(
+                            shape = RoundedCornerShape(24.dp),
+                            color = MaterialTheme.colorScheme.surface,
+                            tonalElevation = 6.dp
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(24.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "நேரத்தைத் தேர்ந்தெடுக்கவும்",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    modifier = Modifier.padding(bottom = 20.dp)
+                                )
+                                TimePicker(state = timePickerState)
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
+                                    horizontalArrangement = Arrangement.End
+                                ) {
+                                    TextButton(onClick = { showTimePicker = false }) { Text("ரத்து செய்") }
+                                    TextButton(onClick = {
+                                        timeText = String.format(Locale.getDefault(), "%02d:%02d", timePickerState.hour, timePickerState.minute)
+                                        showTimePicker = false
+                                    }) { Text("சரி") }
+                                }
+                            }
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
