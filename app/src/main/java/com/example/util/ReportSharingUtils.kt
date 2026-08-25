@@ -210,6 +210,18 @@ object ReportSharingUtils {
         val colBalance = 355f
         val colRemarks = 425f
 
+        fun wrapText(text: String, maxWidth: Float, paint: Paint): List<String> {
+            val lines = mutableListOf<String>()
+            var start = 0
+            while (start < text.length) {
+                val count = paint.breakText(text, start, text.length, true, maxWidth, null)
+                if (count <= 0) break
+                lines.add(text.substring(start, start + count))
+                start += count
+            }
+            return lines
+        }
+
         fun drawCellText(text: String, startX: Float, nextStartX: Float, currentY: Float, paint: Paint, align: Paint.Align = Paint.Align.LEFT) {
             val width = nextStartX - startX
             val textWidth = paint.measureText(text)
@@ -246,9 +258,14 @@ object ReportSharingUtils {
             val imageCount = imageUris.size
             val imagePadding = 10f
             val imageDrawHeight = 160f
-            val rowHeight = if (imageCount > 0) {
-                30f + (imageCount * (imageDrawHeight + imagePadding))
-            } else 30f
+            
+            // Wrap remarks and calculate text height
+            val remarksWidth = endX - colRemarks - 10f
+            val wrappedRemarks = wrapText(tx.remarks, remarksWidth, textPaint)
+            val lineHeight = textPaint.textSize + 2f
+            val remarksHeight = wrappedRemarks.size * lineHeight
+            
+            val rowHeight = Math.max(30f, 25f + remarksHeight + (imageCount * (imageDrawHeight + imagePadding)))
 
             if (y + rowHeight > 800) {
                 pdfDocument.finishPage(page)
@@ -270,12 +287,16 @@ object ReportSharingUtils {
             drawCellText("${tx.pureWeight}g", colPure, colBalance, startY + 20, textPaint, Paint.Align.RIGHT)
             drawCellText("${item.balanceAtThisPoint}g", colBalance, colRemarks, startY + 20, textPaint, Paint.Align.RIGHT)
             
-            val remarks = if (tx.remarks.length > 25) tx.remarks.take(22) + "..." else tx.remarks
-            drawCellText(remarks, colRemarks, endX, startY + 20, textPaint, Paint.Align.LEFT)
+            // Draw all lines of remarks
+            var remarksY = startY + 20f
+            wrappedRemarks.forEach { line ->
+                canvas.drawText(line, colRemarks + 5f, remarksY, textPaint)
+                remarksY += lineHeight
+            }
 
-            // Draw Images
+            // Draw Images below remarks
             if (imageCount > 0) {
-                var imgY = startY + 35f
+                var imgY = remarksY + 5f
                 val imagePaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
                 val maxImgWidth = endX - colRemarks - 10f
                 
