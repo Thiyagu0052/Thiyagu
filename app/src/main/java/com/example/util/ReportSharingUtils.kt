@@ -379,4 +379,5 @@ object ReportSharingUtils {
         }
         ctx.startActivity(Intent.createChooser(intent, "அறிக்கை பகிரவும்"))
     }
+    
 }

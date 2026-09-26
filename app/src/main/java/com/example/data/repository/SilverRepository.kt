@@ -84,6 +84,16 @@ class SilverRepository(
     suspend fun saveShopsFromRemote(shops: List<Shop>) = syncMutex.withLock {
         database.withTransaction {
             val existingShops = shopDao.getAllShops().first()
+            
+            // 1. Delete local shops not in the remote list
+            val remoteIds = shops.map { it.id }.toSet()
+            existingShops.forEach { local ->
+                if (!remoteIds.contains(local.id)) {
+                    shopDao.deleteShop(local)
+                }
+            }
+
+            // 2. Insert or Update remote shops
             shops.forEach { remote ->
                 val match = existingShops.find { it.id == remote.id || it.shopName.trim().equals(remote.shopName.trim(), ignoreCase = true) }
                 if (match != null) {
@@ -92,7 +102,7 @@ class SilverRepository(
                     shopDao.insertShop(remote)
                 }
             }
-            // Remove duplicate shops with identical names
+            // 3. Remove duplicate shops with identical names
             val allCurrent = shopDao.getAllShops().first()
             val seenNames = mutableSetOf<String>()
             allCurrent.forEach { shop ->
@@ -109,6 +119,16 @@ class SilverRepository(
     suspend fun saveProductsFromRemote(products: List<Product>) = syncMutex.withLock {
         database.withTransaction {
             val existingProducts = productDao.getAllProducts().first()
+            
+            // 1. Delete local products not in the remote list
+            val remoteIds = products.map { it.id }.toSet()
+            existingProducts.forEach { local ->
+                if (!remoteIds.contains(local.id)) {
+                    productDao.deleteProduct(local)
+                }
+            }
+
+            // 2. Insert or Update remote products
             products.forEach { remote ->
                 val match = existingProducts.find { it.id == remote.id || it.productName.trim().equals(remote.productName.trim(), ignoreCase = true) }
                 if (match != null) {
@@ -133,6 +153,16 @@ class SilverRepository(
     suspend fun saveTransactionsFromRemote(transactions: List<Transaction>) = syncMutex.withLock {
         database.withTransaction {
             val existingTxs = transactionDao.getAllTransactions().first()
+            
+            // 1. Delete local transactions not in the remote list
+            val remoteIds = transactions.map { it.id }.toSet()
+            existingTxs.forEach { local ->
+                if (!remoteIds.contains(local.id)) {
+                    transactionDao.deleteTransaction(local)
+                }
+            }
+
+            // 2. Insert or Update remote transactions
             transactions.forEach { remote ->
                 val match = existingTxs.find { local ->
                     local.id == remote.id || (
@@ -150,7 +180,7 @@ class SilverRepository(
                     transactionDao.insertTransaction(remote)
                 }
             }
-            // Remove exact duplicate transactions locally
+            // 3. Remove exact duplicate transactions locally
             val allCurrent = transactionDao.getAllTransactions().first()
             val seenMap = mutableMapOf<String, Transaction>()
             allCurrent.forEach { tx ->

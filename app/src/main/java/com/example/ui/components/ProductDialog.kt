@@ -48,7 +48,7 @@ fun ProductDialog(
     var imageUriText by remember(existingProduct) { mutableStateOf(existingProduct?.imageUri ?: "") }
 
     val presetProducts = remember {
-        listOf("Payal", "Anklets", "Leg Chain", "Chains", "Rings", "Utensils", "Coins", "Bars", "Kaddiyalu", "Waist Chain")
+        listOf("கொலுசு", "தண்டை", "மெட்டி", "சங்கிலி", "மோதிரம்", "பாத்திரங்கள்", "நாணயங்கள்", "கட்டிகள்", "கடயலு", "அரைஞாண் கொடி")
     }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
@@ -58,7 +58,7 @@ fun ProductDialog(
     }
 
     val categories = remember {
-        listOf("Anklets", "Chains", "Rings", "Utensils", "Coins", "Bars", "Custom Ornaments")
+        listOf("கொலுசு வகைகள்", "சங்கிலி வகைகள்", "மோதிரங்கள்", "பாத்திரங்கள்", "நாணயங்கள்", "வெள்ளி கட்டிகள்", "மற்றவை")
     }
     var categoryExpanded by remember { mutableStateOf(false) }
 
@@ -90,13 +90,13 @@ fun ProductDialog(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = if (existingProduct == null) "Add Silver Product" else "Edit Silver Product",
+                            text = if (existingProduct == null) "புதிய வெள்ளி தயாரிப்பு" else "தயாரிப்பு திருத்தம்",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold
                         )
                     }
                     IconButton(onClick = onDismiss) {
-                        Icon(imageVector = Icons.Default.Close, contentDescription = "Close")
+                        Icon(imageVector = Icons.Default.Close, contentDescription = "மூடு")
                     }
                 }
 
@@ -113,9 +113,9 @@ fun ProductDialog(
                 OutlinedTextField(
                     value = productName,
                     onValueChange = { productName = it },
-                    label = { Text("Product Name(s) *") },
-                    placeholder = { Text("e.g. Payal, Leg Chain, Anklet, Rings") },
-                    supportingText = { Text("Tip: Separate multiple product names with commas") },
+                    label = { Text("தயாரிப்பு பெயர்(கள்) *") },
+                    placeholder = { Text("எ.கா. கொலுசு, தண்டை, மோதிரம்") },
+                    supportingText = { Text("குறிப்பு: கமா(,) மூலம் பல பெயர்களைப் பிரிக்கலாம்") },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp)
                 )
@@ -124,7 +124,7 @@ fun ProductDialog(
 
                 // Preset Product Chips for Quick Selection
                 Text(
-                    text = "Quick Map Presets:",
+                    text = "விரைவுத் தேர்வு:",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold
@@ -164,7 +164,7 @@ fun ProductDialog(
                         value = category,
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Category") },
+                        label = { Text("வகை") },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
                         modifier = Modifier
                             .menuAnchor(MenuAnchorType.PrimaryNotEditable)
@@ -192,8 +192,8 @@ fun ProductDialog(
                 OutlinedTextField(
                     value = defaultWeightText,
                     onValueChange = { defaultWeightText = it },
-                    label = { Text("Default Weight (g)") },
-                    placeholder = { Text("e.g. 250") },
+                    label = { Text("இயல்பு எடை (கி)") },
+                    placeholder = { Text("எ.கா. 250") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
@@ -214,7 +214,7 @@ fun ProductDialog(
                     ) {
                         Icon(imageVector = Icons.Default.AddPhotoAlternate, contentDescription = null)
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text(if (imageUriText.isEmpty()) "Upload Image" else "Change Image")
+                        Text(if (imageUriText.isEmpty()) "புகைப்படம் இணைக்கவும்" else "புகைப்படத்தை மாற்றவும்")
                     }
 
                     if (imageUriText.isNotEmpty()) {
@@ -262,7 +262,7 @@ fun ProductDialog(
                     horizontalArrangement = Arrangement.End
                 ) {
                     TextButton(onClick = onDismiss, modifier = Modifier.padding(end = 8.dp)) {
-                        Text("Cancel")
+                        Text("ரத்து செய்")
                     }
                     Button(
                         onClick = {
@@ -275,7 +275,7 @@ fun ProductDialog(
                         enabled = productName.isNotBlank(),
                         shape = RoundedCornerShape(10.dp)
                     ) {
-                        Text("Save Product")
+                        Text("சேமி")
                     }
                 }
             }

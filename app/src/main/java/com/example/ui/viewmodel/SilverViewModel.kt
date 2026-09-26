@@ -48,23 +48,17 @@ class SilverViewModel(application: Application) : AndroidViewModel(application) 
         firebaseSyncManager.startRealtimeSync(
             onShopsReceived = { remoteShops ->
                 viewModelScope.launch {
-                    if (remoteShops.isNotEmpty()) {
-                        repository.saveShopsFromRemote(remoteShops)
-                    }
+                    repository.saveShopsFromRemote(remoteShops)
                 }
             },
             onProductsReceived = { remoteProducts ->
                 viewModelScope.launch {
-                    if (remoteProducts.isNotEmpty()) {
-                        repository.saveProductsFromRemote(remoteProducts)
-                    }
+                    repository.saveProductsFromRemote(remoteProducts)
                 }
             },
             onTransactionsReceived = { remoteTxs ->
                 viewModelScope.launch {
-                    if (remoteTxs.isNotEmpty()) {
-                        repository.saveTransactionsFromRemote(remoteTxs)
-                    }
+                    repository.saveTransactionsFromRemote(remoteTxs)
                 }
             }
         )

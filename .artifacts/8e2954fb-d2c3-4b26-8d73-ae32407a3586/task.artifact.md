@@ -1,0 +1,5 @@
+- `[ ]` Update `SilverRepository.kt` to handle deletions in `saveShopsFromRemote`, `saveProductsFromRemote`, and `saveTransactionsFromRemote`
+- `[ ]` Update `SilverViewModel.kt` Firebase listeners to allow empty lists (for clearing data)
+- `[ ]` Translate hardcoded defaults in `ProductDialog.kt` to Tamil
+- `[ ]` Translate hardcoded defaults in `TransactionDialog.kt` to Tamil
+- `[ ]` Verify changes (Manual verification plan)

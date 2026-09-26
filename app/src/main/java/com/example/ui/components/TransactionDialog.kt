@@ -441,7 +441,7 @@ fun TransactionDialog(
                 val availableProductNames = remember(products) {
                     val dbNames = products.asSequence().map { it.productName.trim() }.filter { it.isNotEmpty() }.toList()
                     if (dbNames.isNotEmpty()) dbNames.distinct()
-                    else listOf("Payal", "Anklets", "Leg Chain", "Chains", "Rings", "Utensils", "Coins", "Bars", "Kaddiyalu")
+                    else listOf("கொலுசு", "தண்டை", "மெட்டி", "சங்கிலி", "மோதிரம்", "பாத்திரங்கள்", "நாணயங்கள்", "கட்டிகள்", "கடயலு")
                 }
 
                 Text(
